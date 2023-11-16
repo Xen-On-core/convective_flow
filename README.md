@@ -6,4 +6,4 @@ gcc main.c -o main && ./main
 python3 graph.py
 ```
 
-![Demo](./demo/demo.gif)
+![Demo](./demo/demo_light.gif)
