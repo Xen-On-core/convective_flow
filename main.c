@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 /*
  * Инициализируем следующие переменные, описывающие сетку для вычислений:
@@ -39,9 +40,9 @@
 #define g ( 9.8 )
 #define rigth_beta ( Gr / Re)
 
-// float x[N];
-// float y[M];
-// float t[K];
+float x[N];
+float y[M];
+float t[K];
 
 float T[K][M][N];
 float T12[K][M][N];
@@ -122,7 +123,7 @@ void init_boundary_conditions(float array[K][M][N], char side, int a, int b, flo
                 array[k][0][i] = a * array[k][1][i] + b*value;
         break;
     
-    case 'u':
+    case 't':
         for (int k = 0; k < K; k++)
             for (int i = 0; i < N; i++)
                 array[k][M-1][i] = a * array[k][M-2][i] + b*value;
@@ -135,8 +136,14 @@ void init_boundary_conditions(float array[K][M][N], char side, int a, int b, flo
 
 void calculations() {
     
+    /*
+     * Global cycle for time
+     */
     for (int k = 0; k < K; k++)
     {
+        /*
+         * Calculations of velocities
+         */
         for (int j = 1; j < M-1; j++)
         {
             for (int i = 1; i < N-1; i++)
@@ -146,15 +153,19 @@ void calculations() {
             }
         }
 
+        /*
+         * Run back-for by X for over Y on n+1/2 layer
+         */
+        float coef_x = tau/(2*hx);
         for (int j = 1; j < M-1; j++)
         {
-            alpha_x[1] = 0;
-            beta_x[1] = 1.0/4.0;
+            alpha_x[1] = 1;
+            beta_x[1] = 0;
 
             for (int i = 1; i < N-1; i++)
             {
-                float A = tau/(2*hx) * (xi/hx + u[j][i]/2);
-                float B = tau/(2*hx) * (xi/hx - u[j][i]/2);
+                float A = coef_x * (xi/hx + u[j][i]/2);
+                float B = coef_x * (xi/hx - u[j][i]/2);
                 float C = 1 + tau * xi / (hx * hx);
                 float F = T[k][j][i] - tau*v[j][i]/(4*hy)*(T[k][j+1][i] - T[k][j-1][i]) + \
                             tau*xi/(2*hy*hy)*(T[k][j+1][i] - 2*T[k][j][i] + T[k][j-1][i]);
@@ -163,21 +174,28 @@ void calculations() {
                 beta_x[i+1] = (A * beta_x[i] + F) / (C - A * alpha_x[i]);
             }
 
-            T12[k][j][N-1] = 1.0;
+            T12[k][j][N-1] = beta_x[N-1]/(1-alpha_x[N-1]);
             for (int i = N-2; i >= 0; i--)
+            {
                 T12[k][j][i] = alpha_x[i+1] * T12[k][j][i+1] + beta_x[i+1];
+            }
         }
 
-        
+        /*
+         * Run back-for by Y for over X on n+1 layer
+         */
+        float coef_y = tau/(2*hy);
         for (int i = 1; i < N-1; i++)
         {
-            alpha_y[1] = 1;
-            beta_y[1] = 0;
+            // alpha - a second-order condition.
+            // beta - a first-order condition.
+            alpha_y[1] = 0;
+            beta_y[1] = 1.0/8.0;
 
             for (int j = 1; j < M-1; j++)
             {
-                float A = tau/(2*hy) * (xi/hy + v[j][i]/2);
-                float B = tau/(2*hy) * (xi/hy - v[j][i]/2);
+                float A = coef_y * (xi/hy + v[j][i]/2);
+                float B = coef_y * (xi/hy - v[j][i]/2);
                 float C = 1 + tau * xi / (hy * hy);
                 float F = T12[k][j][i] - tau*u[j][i]/(4*hx)*(T12[k][j][i+1] - T12[k][j][i-1]) + \
                             tau*xi/(2*hx*hx)*(T12[k][j][i+1] - 2*T12[k][j][i] + T12[k][j][i-1]);
@@ -186,21 +204,30 @@ void calculations() {
                 beta_y[j+1] = (A * beta_y[j] + F) / (C - A * alpha_y[j]);
             }
 
-            T[k+1][M-1][i] = beta_y[M-2]/(1 - alpha_y[M-2]);
+            T[k+1][M-1][i] = 1.0;
             for (int j = M-2; j >= 0; j--)
+            {
                 T[k+1][j][i] = alpha_y[j+1] * T[k+1][j+1][i] + beta_y[j+1];
+                T[k+1][j][0] = T[k+1][j+1][1];
+                T[k+1][j][N-1] = T[k+1][j+1][N-2];
+
+            }
         }
         
-        
+        /*
+         * Run back-for by X for over Y on n+1/2 layer
+         */
         for (int j = 1; j < M-1; j++)
         {
+            // alpha - a second-order condition.
+            // beta - a first-order condition.
             alpha_x[1] = 0;
             beta_x[1] = -2 / (hx*hx) * psi[j][1];
 
             for (int i = 1; i < N-1; i++)
             {
-                float A = tau/(2*hx) * (nu/hx + u[j][i]/2);
-                float B = tau/(2*hx) * (nu/hx - u[j][i]/2);
+                float A = coef_x * (nu/hx + u[j][i]/2);
+                float B = coef_x * (nu/hx - u[j][i]/2);
                 float C = 1 + tau * nu / (hx * hx);
                 float F = omega[k][j][i] - tau*v[j][i]/(4*hy)*(omega[k][j+1][i] - omega[k][j-1][i]) + \
                             tau*nu/(2*hy*hy)*(omega[k][j+1][i] - 2*omega[k][j][i] + omega[k][j-1][i]) + \
@@ -216,16 +243,20 @@ void calculations() {
             omega12[k][j][0] = -2 / (hx*hx) * psi[j][1];
         }
 
-        
+        /*
+         * Run back-for by Y for over X on n+1 layer
+         */
         for (int i = 1; i < N-1; i++)
         {
+            // alpha - a second-order condition.
+            // beta - a first-order condition.
             alpha_y[1] = 0;
             beta_y[1] = -2 / (hy*hy) * psi[1][i];
 
             for (int j = 1; j < M-1; j++)
             {
-                float A = tau/(2*hy) * (nu/hy - v[j][i]/2);
-                float B = tau/(2*hy) * (nu/hy + v[j][i]/2);
+                float A = coef_y * (nu/hy - v[j][i]/2);
+                float B = coef_y * (nu/hy + v[j][i]/2);
                 float C = 1 + tau * nu / (hy * hy);
                 float F = omega12[k][j][i] - tau*u[j][i]/(4*hx)*(omega12[k][j][i+1] - omega12[k][j][i-1]) + \
                             tau*nu/(2*hx*hx)*(omega12[k][j][i+1] - 2*omega12[k][j][i] + omega12[k][j][i-1]) + \
@@ -241,11 +272,14 @@ void calculations() {
             omega[k+1][0][i] = -2 / (hy*hy) * psi[1][i];
         }
 
+        /*
+         * Calculations of PSI with star-scheme
+         */
+        float psi_coef = (hx*hx*hy*hy/(2*hx*hx + 2*hy*hy));
         for (int j = 1; j < M-1; j++)
             for (int i = 1; i < N-1; i++)
             {
-                psi[j][i] = (hx*hx*hy*hy/(2*hx*hx + 2*hy*hy)) * \
-                            (
+                psi[j][i] = psi_coef * (
                                 (psi[j][i+1] + psi[j][i-1])/(hx*hx) + \
                                 (psi[j+1][i] + psi[j-1][i])/(hy*hy) + \
                                 omega[k][j][i]
@@ -255,18 +289,19 @@ void calculations() {
 }
 
 int main(int argc, char *argv[]) {
-    // init_zero_1d(x, N);
-    // init_zero_1d(y, M);
-    // init_zero_1d(t, K);
+    
+    init_zero_1d(x, N);
+    init_zero_1d(y, M);
+    init_zero_1d(t, K);
 
-    // for (int i = 0; i < N; i++)
-    //     x[i] = i*hx;
+    for (int i = 0; i < N; i++)
+        x[i] = i*hx;
 
-    // for (int j = 0; j < M; j++)
-    //     y[j] = j*hy;
+    for (int j = 0; j < M; j++)
+        y[j] = j*hy;
 
-    // for (int k = 0; k < K; k++)
-    //     t[k] = k*tau;
+    for (int k = 0; k < K; k++)
+        t[k] = k*tau;
 
     init_zero_2d(u);
     init_zero_2d(v);
@@ -280,10 +315,10 @@ int main(int argc, char *argv[]) {
     init_zero_1d(alpha_y, M);
     init_zero_1d(beta_y, M);
 
-    init_boundary_conditions(T, 'l', 0, 1, 1.0/4.0);
-    init_boundary_conditions(T, 'r', 0, 1, 1.0);
-    init_boundary_conditions(T12, 'l', 0, 1, 1.0/4.0);
-    init_boundary_conditions(T12, 'r', 0, 1, 1.0);
+    init_boundary_conditions(T, 'b', 0, 1, 1.0/8.0);
+    init_boundary_conditions(T, 't', 0, 1, 1.0);
+    init_boundary_conditions(T12, 'b', 0, 1, 1.0/8.0);
+    init_boundary_conditions(T12, 't', 0, 1, 1.0);
 
     calculations();
     
@@ -309,6 +344,24 @@ int main(int argc, char *argv[]) {
     fclose(temp);
     fclose(Omg);
     fclose(Psi);
+
+    FILE* temp_all = fopen("./temp_all.txt", "w");
+    if (temp_all == NULL)
+        return -1;
+
+    for (int k = 0; k < K; k+=10)
+    {
+        for (int j = 0; j < M; j++)
+        {
+            for (int i = 0; i < N; i++)
+            {
+                fprintf(temp_all, "%.4f ", T[k][j][i]);
+            }
+        }
+        fprintf(temp_all, "%c", '\n');
+    }
+
+    fclose(temp_all);
 
     // print_array_2d(T12[K-1]);
     // print_array_2d(T[K-1]);

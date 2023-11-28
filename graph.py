@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib
-import sys
+
 import numpy as np
-from os import listdir
-from os.path import isfile, join
 
 
 temp = "Temp.txt"
@@ -22,25 +20,11 @@ with open(temp, 'r') as temp_file, open(Omg, 'r') as Omg_file, open(Psi, 'r') as
     for line in Psi_file:
         Psi_data.append(list(map(float, line.rstrip().split(' '))))
 
-# example_temp = "temp_example.txt"
-# example_data = []
-# x = []
-# y = []
-# with open(example_temp, 'r') as example:
-#     x = list(map(float, example.readline().rstrip().split('\t')))
-#     y = list(map(float, example.readline().rstrip().split('\t')))
-#     example_data = list(map(float, example.readline().rstrip().split('\t')))
-
-# example_array = np.zeros((41, 41))
-# for i in range(len(example_data)):
-#     example_array[i // 41][i % 41] = example_data[i]
-
-# TX = np.arange(0, 1, 1/41)
-# TY = np.arange(0, 1, 1/41)
-# TX, TY = np.meshgrid(TX, TY)
-# Z_example = example_array
-# level = 10
-# Z_temp_levels = np.linspace(np.min(Z_example), np.max(Z_example), level)
+example_temp = "temp_all.txt"
+example_data = []
+with open(example_temp, 'r') as example:
+    for line in example:
+        example_data.append(list(map(float, line.rstrip().split(' ')))) 
 
 
 # Make data
@@ -53,10 +37,22 @@ Z_temp = np.array(temp_data)
 Z_omg = np.array(Omg_data)
 Z_psi = np.array(Psi_data)
 
+example_array = np.zeros((1000, M, N))
+for t in range(len(example_data)):
+    for i in range(N*M):
+        example_array[t][i // M][i % N] = example_data[t][i]
+
+TX = np.arange(0, 1, 1/N)
+TY = np.arange(0, 1, 1/M)
+TX, TY = np.meshgrid(TX, TY)
+Z_example = example_array
+level = 10
+Z_temp_levels = np.linspace(np.min(Z_example), np.max(Z_example), level)
+
 # Plot the surface
 font = {'size'   : 10}
 matplotlib.rc('font', **font)
-fig, ax = plt.subplots(1, 2, subplot_kw={'projection': '3d'})
+fig, ax = plt.subplots(1, 3, subplot_kw={'projection': '3d'})
 
 for item in ax:
     item.set_xlabel("$x$")
@@ -65,16 +61,16 @@ for item in ax:
 ax[0].plot_surface(X, Y, Z_temp, cmap=cm.magma)
 ax[0].set(title="$T$")
 
-ax[1].plot_surface(X, Y, Z_psi, vmin=Z_psi.min() * 2, cmap=cm.magma)
+ax[1].plot_surface(X, Y, Z_psi, cmap=cm.magma)
 ax[1].set(title="$psi$")
 
-# ax[2].plot_surface(X, Y, Z_omg, vmin=Z_omg.min() * 2, cmap=cm.magma)
-# ax[2].set(title="$omega$")
+ax[2].plot_surface(X, Y, Z_omg, cmap=cm.magma)
+ax[2].set(title="$omega$")
 
 
 plt.show()
 
-fig, ax = plt.subplots(1, 2, figsize=(10,10))
+fig, ax = plt.subplots(1, 3, figsize=(10,10))
 
 for item in ax:
     item.set_xlabel("$x$")
@@ -91,9 +87,24 @@ CS = ax[1].contour(X, Y, Z_psi, level)
 ax[1].clabel(CS, inline=True)
 ax[1].set(title="$psi$")
 
-# CS = ax[2].contour(X, Y, Z_omg, level)
-# ax[2].clabel(CS, inline=True)
-# ax[2].set(title="$omega$")
+CS = ax[2].contour(X, Y, Z_omg, level)
+ax[2].clabel(CS, inline=True)
+ax[2].set(title="$omega$")
 
 
+plt.show()
+
+fig = plt.figure(figsize=(12,10))
+ax = fig.add_subplot(projection = '3d')
+ax.set_xlabel("$x$")
+ax.set_ylabel("$y$")
+ax.set(title="$T$")
+ax.view_init(elev=90, azim=-90, roll=0)
+for t in range(0, 1000):
+    # optionally clear axes and reset limits
+    plt.gca().cla()
+    ax.plot_surface(TX, TY, Z_example[t], cmap=cm.hot)
+    fig.canvas.draw()
+    plt.pause(0.001)
+    # plt.savefig(f"./anim/flow{t}.png")
 plt.show()
