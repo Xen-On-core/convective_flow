@@ -1,9 +1,39 @@
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib
+from matplotlib.animation import FuncAnimation
+import time
 
+from PIL import Image
+
+import sys
+import io
 import numpy as np
 
+
+def help():
+    print("%s hadles saved data in .txt files and save plane graph, \n" % sys.argv[0])
+    print("     contours and gif animation (or displays real-time render).\n\n")
+    print("Usage:\n")
+    print("     %s OPTION       \n" % sys.argv[0])
+    print("\nOptions:\n")
+    print("     -R, --real-time             \n")
+    print("     -F, --file-name FILENAME    \n")
+    print("     -?, --help                  \n")
+
+
+if len(sys.argv) < 2 or len(sys.argv) > 2 or sys.argv[1] in ['-?', '--help']:
+    help()
+    exit(0)
+
+realtime = False
+if sys.argv[1] in ['-R', '--real-time']:
+    realtime = True
+elif sys.argv[1] in ['-F', '--file-name']:
+    save_files_name = sys.argv[1]
+else:
+    help()
+    exit(0)
 
 temp = "Temp.txt"
 Omg = "Omg.txt"
@@ -37,14 +67,11 @@ Z_temp = np.array(temp_data)
 Z_omg = np.array(Omg_data)
 Z_psi = np.array(Psi_data)
 
-example_array = np.zeros((1000, M, N))
+example_array = np.zeros((len(example_data), M, N))
 for t in range(len(example_data)):
     for i in range(N*M):
         example_array[t][i // M][i % N] = example_data[t][i]
 
-TX = np.arange(0, 1, 1/N)
-TY = np.arange(0, 1, 1/M)
-TX, TY = np.meshgrid(TX, TY)
 Z_example = example_array
 level = 10
 Z_temp_levels = np.linspace(np.min(Z_example), np.max(Z_example), level)
@@ -67,8 +94,11 @@ ax[1].set(title="$psi$")
 ax[2].plot_surface(X, Y, Z_omg, cmap=cm.magma)
 ax[2].set(title="$omega$")
 
-
-plt.show()
+if realtime:
+    plt.show()
+else:
+    plt.savefig(f'./images/{save_files_name}_plane.png')
+plt.close()
 
 fig, ax = plt.subplots(1, 3, figsize=(10,10))
 
@@ -77,8 +107,6 @@ for item in ax:
     item.set_ylabel("$y$")
     item.set_aspect('equal', adjustable='box')
 
-
-level = 10
 CS = ax[0].contour(X, Y, Z_temp, level)
 ax[0].clabel(CS, inline=True)
 ax[0].set(title="$T$")
@@ -91,20 +119,72 @@ CS = ax[2].contour(X, Y, Z_omg, level)
 ax[2].clabel(CS, inline=True)
 ax[2].set(title="$omega$")
 
+if realtime:
+    plt.show()
+else:
+    plt.savefig(f'./images/{save_files_name}_contour.png')
+plt.close()
 
-plt.show()
-
-fig = plt.figure(figsize=(12,10))
+fig = plt.figure(figsize=(8,8))
 ax = fig.add_subplot(projection = '3d')
 ax.set_xlabel("$x$")
 ax.set_ylabel("$y$")
-ax.set(title="$T$")
+ax.set(title="$T, time = 0.0$")
 ax.view_init(elev=90, azim=-90, roll=0)
-for t in range(0, 1000):
-    # optionally clear axes and reset limits
-    plt.gca().cla()
-    ax.plot_surface(TX, TY, Z_example[t], cmap=cm.hot)
-    fig.canvas.draw()
-    plt.pause(0.001)
-    # plt.savefig(f"./anim/flow{t}.png")
-plt.show()
+
+frames_num = len(example_data)
+
+# def update(i):
+#     start_time = time.time()
+#     if i+1 % 100 == 0:
+#         print(f"=== IMAGE ITERATION {i+1} ===")
+#         print("--- %s seconds ---" % (time.time() - start_time))
+#     plt.gca().cla()
+#     ax.set(title=f"$T$, time = {i / frames_num}")
+#     ax.plot_surface(TX, TY, Z_example[i], cmap=cm.hot)
+
+# anim = FuncAnimation(fig, update, frames = frames_num, interval=10)
+# anim.save(f'./anim/{save_files_name}.gif')
+
+if realtime:
+    # This code need for show real-time animation
+    for t in range(0, len(example_data)):
+        plt.gca().cla()
+        ax.set(title=f"$T$, time = {t / frames_num}")
+        ax.plot_surface(X, Y, Z_example[t], cmap=cm.magma)
+        fig.canvas.draw()
+        plt.pause(0.01)
+    plt.show()
+else:
+    # This code need for save gif of real-time animation
+    #   without displaying figure.
+    print("=== SAVE IMAGES ===")
+    image = []
+    times = []
+    start_time = time.time()
+    for t in range(0, frames_num):
+        if (t+1) % 100 == 0:
+            print("=== IMAGE ITERATION %d ===" % (t+1))
+            print("--- %f seconds ---" % (time.time() - start_time))
+            times.append((time.time() - start_time))
+            start_time = time.time()
+        plt.gca().cla()
+        ax.set(title=f"$T$, time = {t / frames_num}")
+        ax.plot_surface(X, Y, Z_example[t], cmap=cm.magma)
+        buf = io.BytesIO()
+        fig.savefig(buf)
+        buf.seek(0)
+        image.append(Image.open(buf))
+    print("--- GLOBAL SAVE TIME ---")
+    print("--- %f seconds ---" % (sum(times)))
+
+    print("=== SAVE GIF ===")
+    image[0].save(
+        f'./anim/{save_files_name}.gif', 
+        save_all = True, 
+        append_images = image[1:], 
+        optimize = False, 
+        duration = 10,
+        loop = 0)
+    buf.close()
+    print("\tSuccessful!\n")
