@@ -5,13 +5,13 @@
 #include <getopt.h>
 
 /*
- * Определяем следующие переменные, описывающие сетку для вычислений:
- *      N : кол-во узлов по X
- *      M : кол-во узлов по Y
- *      K : кол-во узлов по времени
- *      x_0, y_0 : значение по X и Y на удаленных от осей координат границах
- *      t_0 : граничное время
- *      hx, hy, tau : шаг по X, Y и времени соответственно
+ * We define the following variables describing the grid for calculations:
+ *      N : number of nodes by X
+ *      M : number of nodes by Y
+ *      K : number of nodes by time
+ *      x_0, y_0 : X and Y values at boundaries far from the coordinate axes
+ *      t_0 : boundary time
+ *      hx, hy, tau : step by X, Y and time respectively
  *      
  */
 int N;
@@ -27,14 +27,13 @@ float hy;
 float tau;
 
 /*
- * Определяем константы:
- *      Re : число Рейнольдса
- *      Pr : число Прандтля
- *      Gr : число Грасгофа
- *      xi : коэфф. температуропроводности
- *      nu : коэфф. кинематической вязкости
- *      g : ускорение силы тяжести
- *      right_beta : коэфф. температурного расширения
+ * Defining constants:
+ *      Re : Reynolds number
+ *      Pr : Prandtl number
+ *      Gr : Grashof number
+ *      xi : coefficient of thermal conductivity
+ *      nu : coefficient of kinematic viscosity
+ *      right_beta : coefficient of thermal expansion
  */
 float Re = 0;
 float Gr = 0;
@@ -352,8 +351,6 @@ void helper(const char *progname) {
     printf("        --x-scale       \n");
 	printf("        --y-scale       \n");
 	printf("    -?, --help          \n");
-	// printf(_("\nReport bugs to <%s>.\n"), PACKAGE_BUGREPORT);
-	// printf(_("%s home page: <https://postgrespro.com>\n"), PACKAGE_NAME);
 }
 
 
@@ -509,8 +506,6 @@ int main(int argc, char *argv[]) {
 
     printf("SAVE TIME DATA\n");
     FILE* temp_all = fopen("./temp_all.txt", "w");
-    // FILE* psi_all = fopen("./psi_all.txt", "w");
-    // FILE* omega_all = fopen("./omega_all.txt", "w");
     if (temp_all == NULL)
         return -1;
     
