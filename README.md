@@ -1,9 +1,5 @@
 # convective_flow
 
-For use run:
-```
-gcc main.c -o main && ./main
-python3 graph.py
-```
+To use it, you need to run `make`, and after that you can run `./convective_flow` with the necessary parameters and save graph with `./graph.py`.
 
 ![Demo](./demo/demo_light.gif)
