@@ -520,7 +520,6 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < N; i++)
         {
             fprintf(temp, "%.4f ", temperature[K-1][j][i]);
-            printf("%f",temperature[K-1][j][i] );
             fprintf(Omg, "%.4f ", omega[K-1][j][i]);
             fprintf(Psi, "%.4f ", psi[j][i]);
         }
