@@ -60,7 +60,9 @@ float *beta_y;
 
 float *init_zero_1d(int size) {
     float *array = malloc(sizeof(float) * size);
-
+    if (array == NULL) {
+        return NULL;
+    } 
     for (int i = 0; i < size; i++)
         array[i] = 0;
 
@@ -69,9 +71,16 @@ float *init_zero_1d(int size) {
 
 float **init_zero_2d(int x_size, int y_size) {
     float **array = malloc(sizeof(float*) * y_size);
+    if (array == NULL) {
+        return NULL;
+    }
     
-    for (int j = 0; j < y_size; j++)
+    for (int j = 0; j < y_size; j++){
         array[j] = malloc(sizeof(float) * x_size);
+        if (array[j] == NULL) {
+            return NULL;
+        }
+    }
     
     for (int j = 0; j < y_size; j++)
         for (int i = 0; i < x_size; i++)
@@ -82,12 +91,22 @@ float **init_zero_2d(int x_size, int y_size) {
 
 float ***init_zero_3d(int x_size, int y_size, int z_size) {
     float ***array = malloc(sizeof(float**) * z_size);
+    if (array == NULL) {
+        return NULL;
+    }
     
     for (int k = 0; k < z_size; k++)
     {
         array[k] = malloc(sizeof(float*) * y_size);
-        for (int j = 0; j < y_size; j++)
+        if (array[k] == NULL) {
+            return NULL;
+        }
+        for (int j = 0; j < y_size; j++){
             array[k][j] = malloc(sizeof(float) * x_size);
+            if (array[k][j] == NULL) {
+                return NULL;
+            }
+        }
     }
 
 
@@ -451,6 +470,16 @@ int main(int argc, char *argv[]) {
     beta_x = init_zero_1d(N);
     alpha_y = init_zero_1d(M);
     beta_y = init_zero_1d(M);
+    if ( x == NULL || y == NULL || t == NULL || \
+         temperature == NULL || temperature12 == NULL || \
+        omega == NULL || omega12 == NULL || psi == NULL || \
+        u == NULL || v == NULL || alpha_x == NULL || beta_y == NULL )
+    {
+        printf("Failed to allocate memory\n");
+        exit(1);
+    }
+
+
 
     for (int i = 0; i < N+1; i++)
         x[i] = i*hx;
