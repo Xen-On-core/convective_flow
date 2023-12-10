@@ -103,7 +103,7 @@ float ***init_zero_3d(int x_size, int y_size, int z_size) {
         }
         for (int j = 0; j < y_size; j++){
             array[k][j] = malloc(sizeof(float) * x_size);
-            if (array[k] == NULL) {
+            if (array[k][j] == NULL) {
                 return NULL;
             }
         }
