@@ -355,21 +355,21 @@ void calculations() {
 
 void helper(const char *progname) {
     printf("%s starts a calculations convective flow of fluid in 2D case.\n\n", progname);
-	printf("Usage:\n");
-	printf("    %s [OPTION]...      \n", progname);
-	printf("\nOptions:\n");
+    printf("Usage:\n");
+    printf("    %s [OPTION]...      \n", progname);
+    printf("\nOptions:\n");
     printf("    -G, --grashof       \n");
     printf("    -P, --prandtl       \n");
     printf("    -R, --reynolds      \n");
     printf("    -T, --time-points   \n");
     printf("    -t, --t0            \n");
-	printf("    -x, --x0            \n");
+    printf("    -x, --x0            \n");
     printf("    -X, --x-points      \n");
-	printf("    -y, --y0            \n");
+    printf("    -y, --y0            \n");
     printf("    -Y, --y-points      \n");
     printf("        --x-scale       \n");
-	printf("        --y-scale       \n");
-	printf("    -?, --help          \n");
+    printf("        --y-scale       \n");
+    printf("    -?, --help          \n");
 }
 
 
