@@ -387,14 +387,14 @@ int main(int argc, char *argv[]) {
         {"prandtl", required_argument, NULL, 'P'},
         {"reynolds", required_argument, NULL, 'R'},
         {"t0", required_argument, NULL, 't'},
-		{"time-points", required_argument, NULL, 'T'},
+        {"time-points", required_argument, NULL, 'T'},
         {"x0", required_argument, NULL, 'x'},
         {"x-points", required_argument, NULL, 'X'},
         {"x-scale", required_argument, NULL, 1},
         {"y0", required_argument, NULL, 'y'},
-		{"y-points", required_argument, NULL, 'Y'},
+        {"y-points", required_argument, NULL, 'Y'},
         {"y-scale", required_argument, NULL, 2},
-		{NULL, 0, NULL, 0}
+        {NULL, 0, NULL, 0}
 	};
     int c;
     int digit_optind = 0;
@@ -442,7 +442,7 @@ int main(int argc, char *argv[]) {
                 break;
             default:
                 printf("Try \"./main --help\" for more information.\n");
-				exit(1);
+                exit(1);
         }
     }
 
