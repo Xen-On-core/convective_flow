@@ -16,5 +16,8 @@ clean:
 
 check:
 	$(TESTS)
+  
+vg: all
+	valgrind ./convective_flow
 
-.PHONY: all clean check
+.PHONY: all clean check vg

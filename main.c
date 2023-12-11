@@ -120,21 +120,32 @@ float ***init_zero_3d(int x_size, int y_size, int z_size) {
 }
 
 void free_1d_array(float *array) {
-    free(array);
+    if (array != NULL) {
+        free(array);
+    }
 }
 
 void free_2d_array(float **array) {
-    for (int j = 0; j < M; j++)
-        free(array[j]);
-    free(array);
+    if (array != NULL) {
+        for (int j = 0; j < M; j++)
+            if (array[j] != NULL) {
+                free(array[j]);
+            }
+        free(array);
+    }
 }
 
 void free_3d_array(float ***array) {
-    for (int k = 0; k < K; k++)
-        for (int j = 0; j < M; j++)
-            free(array[k][j]);
-        
-    free(array);
+    if (array != NULL) {
+        for (int k = 0; k < K; k++){
+            for (int j = 0; j < M; j++){
+                if (array[k][j] != NULL) {
+                    free(array[k][j]);
+                }
+            }
+        }
+        free(array);
+    }
 }
 
 void print_array_1d(float *array, int size) {
@@ -373,6 +384,24 @@ void helper(const char *progname) {
     printf("    -?, --help          \n");
 }
 
+void free_arrays(){
+    printf("\nFREEE ALL ALLOCATED MEMORY\n");
+    free_1d_array(x);
+    free_1d_array(y);
+    free_1d_array(t);
+    free_3d_array(temperature);
+    free_3d_array(temperature12);
+    free_3d_array(omega);
+    free_3d_array(omega12);
+    free_2d_array(psi);
+    free_2d_array(u);
+    free_2d_array(v);
+    free_1d_array(alpha_x);
+    free_1d_array(beta_x);
+    free_1d_array(alpha_y);
+    free_1d_array(beta_y);
+    
+}
 
 int main(int argc, char *argv[]) {
 
@@ -532,6 +561,7 @@ int main(int argc, char *argv[]) {
         u == NULL || v == NULL || alpha_x == NULL || beta_y == NULL )
     {
         printf("Failed to allocate memory\n");
+        free_arrays();
         exit(1);
     }
 
@@ -608,22 +638,7 @@ int main(int argc, char *argv[]) {
 
     fclose(temp_all);
     printf("\tSuccessful!\n");
-
-    printf("\nFREEE ALL ALLOCATED MEMORY\n");
-    free_1d_array(x);
-    free_1d_array(y);
-    free_1d_array(t);
-    free_3d_array(temperature);
-    free_3d_array(temperature12);
-    free_3d_array(omega);
-    free_3d_array(omega12);
-    free_2d_array(psi);
-    free_2d_array(u);
-    free_2d_array(v);
-    free_1d_array(alpha_x);
-    free_1d_array(beta_x);
-    free_1d_array(alpha_y);
-    free_1d_array(beta_y);
+    free_arrays();
     printf("\tSuccessful!\n");
 
     return 0;
