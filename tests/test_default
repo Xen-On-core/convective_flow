@@ -1,0 +1,31 @@
+#!/bin/sh
+
+BINDIR=./bin
+DATADIR=./output_data
+LOGDIR=./log
+
+rm -rf ${LOGDIR}
+mkdir ${LOGDIR}
+
+${BINDIR}/convective_flow --time-points 10000 --x-points 10 --y-points 10 --x0 1.0 --y0 1.0 --t0 1.0 --reynolds 1.0 --grashof 10000.0 --prandtl 1.0 > /dev/null
+result=$?
+
+if [ ${result} -ne 0 ]
+then
+    echo "ERROR: the program returned a non-zero execution code."
+    exit 2
+fi
+
+sleep 1
+
+if [ `find ${DATADIR} -type f | wc -l` -eq 0 ]
+then
+    echo "ERROR: the program didn't write any files.";
+    exit 2
+fi
+
+if ls ${DATADIR} | grep 'nan' 
+then
+    echo "ERROR: the write NAN data.";
+    exit 2
+fi
