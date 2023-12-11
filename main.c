@@ -17,14 +17,15 @@
 int N;
 int M;
 int K;
-int x_scale = 1;
-int y_scale = 1;
+float x_scale = 1;
+float y_scale = 1;
 float x_0;
 float y_0;
 float t_0;
 float hx;
 float hy;
 float tau;
+float epsilon = 1e-6;
 
 /*
  * Defining constants:
@@ -136,13 +137,13 @@ void free_3d_array(float ***array) {
     free(array);
 }
 
-void print_array_1d(float array[], int size) {
+void print_array_1d(float *array, int size) {
     for (int i = 0; i < size; i++)
         printf("%.4f ", array[i]);
     printf("\n");
 }
 
-void print_array_2d(float array[][N]) {
+void print_array_2d(float **array) {
     for (int j = 0; j < M; j++) {
         for (int i = 0; i < N; i++)
             printf("%.4f ", array[j][i]);
@@ -206,7 +207,6 @@ void calculations() {
         /*
          * Run back-for by X for over Y on n+1/2 layer
          */
-        // print_array_3d(temperature);
         float coef_x = tau/(2*hx);
         for (int j = 1; j < M-1; j++)
         {
@@ -262,7 +262,6 @@ void calculations() {
                 temperature[k+1][j][i] = alpha_y[j+1] * temperature[k+1][j+1][i] + beta_y[j+1];
                 temperature[k+1][j][0] = temperature[k+1][j+1][1];
                 temperature[k+1][j][N-1] = temperature[k+1][j+1][N-2];
-
             }
         }
         
@@ -292,7 +291,6 @@ void calculations() {
             omega12[k][j][N-1] = -2 / (hx*hx) * psi[j][N-2];
             for (int i = N-2; i >= 0; i--)
                 omega12[k][j][i] = alpha_x[i+1] * omega12[k][j][i+1] + beta_x[i+1];
-            omega12[k][j][0] = -2 / (hx*hx) * psi[j][1];
         }
 
         /*
@@ -320,8 +318,11 @@ void calculations() {
 
             omega[k+1][M-1][i] = -2 / (hy*hy) * psi[M-2][i];
             for (int j = M-2; j >= 0; j--)
+            {
                 omega[k+1][j][i] = alpha_y[j+1] * omega[k+1][j+1][i] + beta_y[j+1];
-            omega[k+1][0][i] = -2 / (hy*hy) * psi[1][i];
+                omega[k+1][j][N-1] = -2 / (hy*hy) * psi[j][N-2];
+                omega[k+1][j][0] = -2 / (hy*hy) * psi[j][1];
+            }
         }
 
         /*
@@ -397,51 +398,106 @@ int main(int argc, char *argv[]) {
         {NULL, 0, NULL, 0}
 	};
     int c;
-    int digit_optind = 0;
     int option_index = 0;
     while ((c = getopt_long(argc, argv, "G:P:R:t:T:x:X:y:Y:",
-                 long_options, &option_index)) != -1) {
-        int this_option_optind = optind ? optind : 1;
-        switch (c) {
+                 long_options, &option_index)) != -1)
+    {
+        switch (c)
+        {
             case 1:
-                x_scale = atoi(optarg);
+                x_scale = atof(optarg);
+                if (x_scale - 0 < epsilon)
+                {
+                    printf("Wrong value of x_scale: %f\n", x_scale);
+                    exit(1);
+                }
                 break;
             case 2:
-                y_scale = atoi(optarg);
+                y_scale = atof(optarg);
+                if (y_scale - 0 < epsilon)
+                {
+                    printf("Wrong value of y_scale: %f\n", y_scale);
+                    exit(1);
+                }
                 break;
             case 'X':
                 N = atoi(optarg);
+                if (N < 10)
+                {
+                    printf("Wrong number of X steps: %d\n", N);
+                    exit(1);
+                }
                 break;
             case 'Y':
                 M = atoi(optarg);
+                if (M < 10)
+                {
+                    printf("Wrong number of Y steps: %d\n", M);
+                    exit(1);
+                }
                 break;
             case 'T':
                 K = atoi(optarg);
+                if (K < 10)
+                {
+                    printf("Wrong number of time steps: %d\n", K);
+                    exit(1);
+                }
                 break;
             case 'x':
                 x_0 = atof(optarg);
+                if (x_0 - 0 < epsilon)
+                {
+                    printf("Wrong value of x0: %f\n", x_0);
+                    exit(1);
+                }
                 break;
             case 'y':
                 y_0 = atof(optarg);
+                if (y_0 - 0 < epsilon)
+                {
+                    printf("Wrong value of y0: %f\n", y_0);
+                    exit(1);
+                }
                 break;
             case 't':
                 t_0 = atof(optarg);
+                if (t_0 - 0 < epsilon)
+                {
+                    printf("Wrong value of t0: %f\n", t_0);
+                    exit(1);
+                }
                 break;
             case 'R':
                 Re = atof(optarg);
+                if (Re - 0 < epsilon)
+                {
+                    printf("Wrong number of Reynolds number: %f\n", Re);
+                    exit(1);
+                }
                 break;
             case 'G':
                 Gr = atof(optarg);
+                if (Gr - 0 < epsilon)
+                {
+                    printf("Wrong number of Grashof number: %f\n", Gr);
+                    exit(1);
+                }
                 break;
             case 'P':
                 Pr = atof(optarg);
+                if (Pr - 0 < epsilon)
+                {
+                    printf("Wrong number of Prandtl number: %f\n", Pr);
+                    exit(1);
+                }
                 break;
             case '?':
                 helper(argv[0]);
                 exit(0);
                 break;
             default:
-                printf("Try \"./main --help\" for more information.\n");
+                printf("Try \"./convective_flow --help\" for more information.\n");
                 exit(1);
         }
     }
@@ -451,7 +507,7 @@ int main(int argc, char *argv[]) {
     tau = t_0 / K;
     xi = 1.0 / (Re * Pr);
     nu = 1.0 / Re;
-    rigth_beta = Gr / (Re*Re);
+    rigth_beta = Gr / (Re * Re);
 
     float T0 = 1.0/8.0;
     float T1 = 1.0;
@@ -509,9 +565,9 @@ int main(int argc, char *argv[]) {
     printf("\tSuccessful!\n");
     
     printf("SAVE DATA\n");
-    FILE* temp = fopen("./Temp.txt", "w");
-    FILE* Omg = fopen("./Omg.txt", "w");
-    FILE* Psi = fopen("./Psi.txt", "w");
+    FILE* temp = fopen("./output_data/Temp.txt", "w");
+    FILE* Omg = fopen("./output_data/Omg.txt", "w");
+    FILE* Psi = fopen("./output_data/Psi.txt", "w");
     if (temp == NULL || Omg == NULL || Psi == NULL)
         return -1;
 
@@ -534,7 +590,7 @@ int main(int argc, char *argv[]) {
     printf("\tSuccessful!\n");
 
     printf("SAVE TIME DATA\n");
-    FILE* temp_all = fopen("./temp_all.txt", "w");
+    FILE* temp_all = fopen("./output_data/temp_all.txt", "w");
     if (temp_all == NULL)
         return -1;
     

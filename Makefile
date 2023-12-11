@@ -1,2 +1,20 @@
+TESTS = ./tests/test_default
+CFLAGS = -Wall
+BINDIR = ./bin
+DATADIR = ./output_data
+BINFILE = convective_flow
+
 all:
-	gcc main.c -o convective_flow -lm
+ifeq ($(wildcard $(BINDIR)/$(BINFILE)),)
+	rm -rf $(BINDIR) $(DATADIR)
+	mkdir $(BINDIR) $(DATADIR)
+endif
+	gcc $(CFLAGS) -o $(BINDIR)/$(BINFILE) main.c -lm
+
+clean:
+	rm -rf $(BINDIR) $(DATADIR)
+
+check:
+	$(TESTS)
+
+.PHONY: all clean check

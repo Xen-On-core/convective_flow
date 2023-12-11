@@ -22,7 +22,7 @@ def help():
     print("     -?, --help                  \n")
 
 
-if len(sys.argv) < 2 or len(sys.argv) > 2 or sys.argv[1] in ['-?', '--help']:
+if len(sys.argv) < 2 or len(sys.argv) > 3 or sys.argv[1] in ['-?', '--help']:
     help()
     exit(0)
 
@@ -30,14 +30,16 @@ realtime = False
 if sys.argv[1] in ['-R', '--real-time']:
     realtime = True
 elif sys.argv[1] in ['-F', '--file-name']:
-    save_files_name = sys.argv[1]
+    save_files_name = sys.argv[2]
 else:
     help()
     exit(0)
 
-temp = "Temp.txt"
-Omg = "Omg.txt"
-Psi = "Psi.txt"
+datadir = './output_data'
+
+temp = f"{datadir}/Temp.txt"
+Omg = f"{datadir}/Omg.txt"
+Psi = f"{datadir}/Psi.txt"
 temp_data = []
 Omg_data = []
 Psi_data = []
@@ -50,7 +52,7 @@ with open(temp, 'r') as temp_file, open(Omg, 'r') as Omg_file, open(Psi, 'r') as
     for line in Psi_file:
         Psi_data.append(list(map(float, line.rstrip().split(' '))))
 
-example_temp = "temp_all.txt"
+example_temp = f"{datadir}/temp_all.txt"
 example_data = []
 with open(example_temp, 'r') as example:
     for line in example:
@@ -148,9 +150,11 @@ frames_num = len(example_data)
 
 if realtime:
     # This code need for show real-time animation
-    for t in range(0, len(example_data)):
+    for t in range(0, frames_num):
         plt.gca().cla()
         ax.set(title=f"$T$, time = {t / frames_num}")
+        ax.set_xlabel("$x$")
+        ax.set_ylabel("$y$")
         ax.plot_surface(X, Y, Z_example[t], cmap=cm.magma)
         fig.canvas.draw()
         plt.pause(0.01)
