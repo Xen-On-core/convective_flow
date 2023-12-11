@@ -426,11 +426,9 @@ int main(int argc, char *argv[]) {
 		{NULL, 0, NULL, 0}
 	};
     int c;
-    int digit_optind = 0;
     int option_index = 0;
     while ((c = getopt_long(argc, argv, "G:P:R:t:T:x:X:y:Y:",
                  long_options, &option_index)) != -1) {
-        int this_option_optind = optind ? optind : 1;
         switch (c) {
             case 1:
                 x_scale = atoi(optarg);
@@ -440,12 +438,24 @@ int main(int argc, char *argv[]) {
                 break;
             case 'X':
                 N = atoi(optarg);
+                if (N <= 0) {
+                    printf("Wrong number of X steps: %d\n", N);
+                    exit(1);
+                }
                 break;
             case 'Y':
                 M = atoi(optarg);
+                if (M <= 0) {
+                    printf("Wrong number of Y steps: %d\n", M);
+                    exit(1);
+                }
                 break;
             case 'T':
                 K = atoi(optarg);
+                if (K <= 0) {
+                    printf("Wrong number of time steps: %d\n", K);
+                    exit(1);
+                }
                 break;
             case 'x':
                 x_0 = atof(optarg);
