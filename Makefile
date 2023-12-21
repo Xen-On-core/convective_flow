@@ -1,6 +1,7 @@
 TESTS = ./tests/test_default
-CFLAGS = -Wall
+CFLAGS = -O2 -Wall -lm
 BINDIR = ./bin
+SRCDIR = ./src
 DATADIR = ./output_data
 BINFILE = convective_flow
 
@@ -9,7 +10,7 @@ ifeq ($(wildcard $(BINDIR)/$(BINFILE)),)
 	rm -rf $(BINDIR) $(DATADIR)
 	mkdir $(BINDIR) $(DATADIR)
 endif
-	gcc $(CFLAGS) -o $(BINDIR)/$(BINFILE) main.c -lm
+	gcc $(SRCDIR)/main.c $(SRCDIR)/utils.c -o $(BINDIR)/$(BINFILE) $(CFLAGS)
 
 clean:
 	rm -rf $(BINDIR) $(DATADIR)
