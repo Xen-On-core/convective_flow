@@ -26,6 +26,6 @@ check:
 	$(TESTS)
   
 vg: all
-	valgrind $(BINFILE) --time-points 10000 --x-points 20 --y-points 20 --x0 1.0 --y0 1.0 --t0 1.0 --reynolds 1.0 --grashof 10000.0 --prandtl 1.0
+	valgrind $(BINFILE) --time-points 10000 --x-points 20 --y-points 20 --x_0 1.0 --y_0 1.0 --t_0 1.0 --reynolds 1.0 --grashof 10000.0 --prandtl 1.0
 
 .PHONY: all clean check vg
