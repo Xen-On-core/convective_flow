@@ -4,28 +4,42 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include "utils/array.h"
+
+float epsilon = 1e-6;
+#define NUMCHECK(number) \
+            if (abs(number - 0) < epsilon) { \
+                printf("Wrong value of %s: %f\n", #number, number); \
+                exit(1); \
+            }
+
 /*
  * We define the following variables describing the grid for calculations:
  *      N : number of nodes by X
  *      M : number of nodes by Y
  *      K : number of nodes by time
- *      x_0, y_0 : X and Y values at boundaries far from the coordinate axes
- *      t_0 : boundary time
+ *      x_0, y_0 : X and Y values at left boundaries
+ *      x_1, y_1 : X and Y values at right boundaries
+ *      t_1 : end time value
  *      hx, hy, tau : step by X, Y and time respectively
- *      
  */
-int N;
-int M;
-int K;
+extern int N;
+extern int M;
+extern int K;
 float x_scale = 1;
 float y_scale = 1;
-float x_0;
-float y_0;
-float t_0;
+float time_scale = 1;
+float x_0 = 0.0;
+float y_0 = 0.0;
+float x_1 = 1.0;
+float y_1 = 1.0;
+float t_1 = 1.0;
 float hx;
 float hy;
 float tau;
-float epsilon = 1e-6;
+float T0 = 1.0/4.0;
+float T1 = 1.0;
+
 
 /*
  * Defining constants:
@@ -36,146 +50,29 @@ float epsilon = 1e-6;
  *      nu : coefficient of kinematic viscosity
  *      right_beta : coefficient of thermal expansion
  */
-float Re = 0;
-float Gr = 0;
-float Pr = 0;
+float Re = 1.0;
+float Gr = 10000.0;
+float Pr = 1.0;
 float xi;
 float nu;
 float rigth_beta;
 
-float *x;
-float *y;
-float *t;
-float ***temperature;
-float ***temperature12;
-float ***omega;
-float ***omega12;
-float **psi;
-float **u;
-float **v;
-float *alpha_x;
-float *beta_x;
-float *alpha_y;
-float *beta_y;
+Vector x;
+Vector y;
+Vector t;
+Matrix3D temperature;
+Matrix3D temperature12;
+Matrix3D omega;
+Matrix3D omega12;
+Matrix psi;
+Matrix u;
+Matrix v;
+Vector alpha_x;
+Vector beta_x;
+Vector alpha_y;
+Vector beta_y;
 
-
-float *init_zero_1d(int size) {
-    float *array = malloc(sizeof(float) * size);
-    if (array == NULL) {
-        return NULL;
-    } 
-    for (int i = 0; i < size; i++)
-        array[i] = 0;
-
-    return array;
-}
-
-float **init_zero_2d(int x_size, int y_size) {
-    float **array = malloc(sizeof(float*) * y_size);
-    if (array == NULL) {
-        return NULL;
-    }
-    
-    for (int j = 0; j < y_size; j++){
-        array[j] = malloc(sizeof(float) * x_size);
-        if (array[j] == NULL) {
-            return NULL;
-        }
-    }
-    
-    for (int j = 0; j < y_size; j++)
-        for (int i = 0; i < x_size; i++)
-            array[j][i] = 0.0;
-
-    return array;
-}
-
-float ***init_zero_3d(int x_size, int y_size, int z_size) {
-    float ***array = malloc(sizeof(float**) * z_size);
-    if (array == NULL) {
-        return NULL;
-    }
-    
-    for (int k = 0; k < z_size; k++)
-    {
-        array[k] = malloc(sizeof(float*) * y_size);
-        if (array[k] == NULL) {
-            return NULL;
-        }
-        for (int j = 0; j < y_size; j++){
-            array[k][j] = malloc(sizeof(float) * x_size);
-            if (array[k][j] == NULL) {
-                return NULL;
-            }
-        }
-    }
-
-
-    for (int k = 0; k < z_size; k++)
-        for (int j = 0; j < y_size; j++)
-            for (int i = 0; i < x_size; i++)
-                array[k][j][i] = 0.0;
-
-    return array;
-}
-
-void free_1d_array(float *array) {
-    if (array != NULL) {
-        free(array);
-    }
-}
-
-void free_2d_array(float **array) {
-    if (array != NULL) {
-        for (int j = 0; j < M; j++)
-            if (array[j] != NULL) {
-                free(array[j]);
-            }
-        free(array);
-    }
-}
-
-void free_3d_array(float ***array) {
-    if (array != NULL) {
-        for (int k = 0; k < K; k++){
-            for (int j = 0; j < M; j++){
-                if (array[k][j] != NULL) {
-                    free(array[k][j]);
-                }
-            }
-        }
-        free(array);
-    }
-}
-
-void print_array_1d(float *array, int size) {
-    for (int i = 0; i < size; i++)
-        printf("%.4f ", array[i]);
-    printf("\n");
-}
-
-void print_array_2d(float **array) {
-    for (int j = 0; j < M; j++) {
-        for (int i = 0; i < N; i++)
-            printf("%.4f ", array[j][i]);
-        printf("\n");
-    }
-    printf("\n");
-}
-
-void print_array_3d(float ***array) {
-    for (int k = 0; k < K; k++) {
-        for (int j = 0; j < M; j++) {
-            for (int i = 0; i < N; i++)
-                printf("%.4f ", array[k][j][i]);
-            printf("\n");
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
-void init_boundary_conditions(float ***array, char side, int a, int b, float value) {
+void init_boundary_conditions(Matrix3D array, char side, int a, int b, float value) {
     switch (side)
     {
     case 'l':
@@ -205,8 +102,6 @@ void init_boundary_conditions(float ***array, char side, int a, int b, float val
     default:
         break;
     }
-
-    // return array;
 }
 
 void calculations() {
@@ -221,8 +116,8 @@ void calculations() {
         float coef_x = tau/(2*hx);
         for (int j = 1; j < M-1; j++)
         {
-            alpha_x[1] = 1;
-            beta_x[1] = 0;
+            alpha_x[1] = 0;
+            beta_x[1] = T0;
 
             for (int i = 1; i < N-1; i++)
             {
@@ -237,7 +132,7 @@ void calculations() {
                 beta_x[i+1] = (A * beta_x[i] + F) / (C - A * alpha_x[i]);
             }
 
-            temperature12[k][j][N-1] = beta_x[N-1]/(1-alpha_x[N-1]);
+            temperature12[k][j][N-1] = T1;
             for (int i = N-2; i >= 0; i--)
             {
                 temperature12[k][j][i] = alpha_x[i+1] * temperature12[k][j][i+1] + beta_x[i+1];
@@ -252,8 +147,8 @@ void calculations() {
         {
             // alpha - a second-order condition.
             // beta - a first-order condition.
-            alpha_y[1] = 0;
-            beta_y[1] = 1.0;
+            alpha_y[1] = 1;
+            beta_y[1] = 0;
 
             for (int j = 1; j < M-1; j++)
             {
@@ -267,12 +162,12 @@ void calculations() {
                 beta_y[j+1] = (A * beta_y[j] + F) / (C - A * alpha_y[j]);
             }
 
-            temperature[k+1][M-1][i] = 1.0/8.0;
+            temperature[k+1][M-1][i] = beta_y[N-1]/(1-alpha_y[N-1]);
             for (int j = M-2; j >= 0; j--)
             {
                 temperature[k+1][j][i] = alpha_y[j+1] * temperature[k+1][j+1][i] + beta_y[j+1];
-                temperature[k+1][j][0] = temperature[k+1][j+1][1];
-                temperature[k+1][j][N-1] = temperature[k+1][j+1][N-2];
+                // temperature[k+1][j][0] = temperature[k+1][j][1];
+                // temperature[k+1][j][N-1] = temperature[k+1][j][N-2];
             }
         }
         
@@ -370,15 +265,15 @@ void helper(const char *progname) {
     printf("Usage:\n");
     printf("    %s [OPTION]...      \n", progname);
     printf("\nOptions:\n");
-    printf("    -G, --grashof       \n");
-    printf("    -P, --prandtl       \n");
-    printf("    -R, --reynolds      \n");
-    printf("    -T, --time-points   \n");
-    printf("    -t, --t0            \n");
-    printf("    -x, --x0            \n");
-    printf("    -X, --x-points      \n");
-    printf("    -y, --y0            \n");
-    printf("    -Y, --y-points      \n");
+    printf("    -G, --grashof       Reynolds number\n");
+    printf("    -P, --prandtl       Prandtl number\n");
+    printf("    -R, --reynolds      Grashof number\n");
+    printf("    -T, --time-points   number of nodes by X\n");
+    printf("    -t, --t1            \n");
+    printf("    -x, --x1            \n");
+    printf("    -X, --x-points      number of nodes by Y\n");
+    printf("    -y, --y1            \n");
+    printf("    -Y, --y-points      number of nodes by time\n");
     printf("        --x-scale       \n");
     printf("        --y-scale       \n");
     printf("    -?, --help          \n");
@@ -386,20 +281,20 @@ void helper(const char *progname) {
 
 void free_arrays(){
     printf("\nFREEE ALL ALLOCATED MEMORY\n");
-    free_1d_array(x);
-    free_1d_array(y);
-    free_1d_array(t);
-    free_3d_array(temperature);
-    free_3d_array(temperature12);
-    free_3d_array(omega);
-    free_3d_array(omega12);
-    free_2d_array(psi);
-    free_2d_array(u);
-    free_2d_array(v);
-    free_1d_array(alpha_x);
-    free_1d_array(beta_x);
-    free_1d_array(alpha_y);
-    free_1d_array(beta_y);
+    free_vector(x);
+    free_vector(y);
+    free_vector(t);
+    free_matrix3d(temperature);
+    free_matrix3d(temperature12);
+    free_matrix3d(omega);
+    free_matrix3d(omega12);
+    free_matrix(psi);
+    free_matrix(u);
+    free_matrix(v);
+    free_vector(alpha_x);
+    free_vector(beta_x);
+    free_vector(alpha_y);
+    free_vector(beta_y);
     
 }
 
@@ -416,12 +311,12 @@ int main(int argc, char *argv[]) {
         {"help", no_argument, NULL, '?'},
         {"prandtl", required_argument, NULL, 'P'},
         {"reynolds", required_argument, NULL, 'R'},
-        {"t0", required_argument, NULL, 't'},
+        {"t_1", required_argument, NULL, 't'},
         {"time-points", required_argument, NULL, 'T'},
-        {"x0", required_argument, NULL, 'x'},
+        {"x_1", required_argument, NULL, 'x'},
         {"x-points", required_argument, NULL, 'X'},
         {"x-scale", required_argument, NULL, 1},
-        {"y0", required_argument, NULL, 'y'},
+        {"y_1", required_argument, NULL, 'y'},
         {"y-points", required_argument, NULL, 'Y'},
         {"y-scale", required_argument, NULL, 2},
         {NULL, 0, NULL, 0}
@@ -435,19 +330,11 @@ int main(int argc, char *argv[]) {
         {
             case 1:
                 x_scale = atof(optarg);
-                if (x_scale - 0 < epsilon)
-                {
-                    printf("Wrong value of x_scale: %f\n", x_scale);
-                    exit(1);
-                }
+                NUMCHECK(x_scale)
                 break;
             case 2:
                 y_scale = atof(optarg);
-                if (y_scale - 0 < epsilon)
-                {
-                    printf("Wrong value of y_scale: %f\n", y_scale);
-                    exit(1);
-                }
+                NUMCHECK(y_scale)
                 break;
             case 'X':
                 N = atoi(optarg);
@@ -474,52 +361,28 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 'x':
-                x_0 = atof(optarg);
-                if (x_0 - 0 < epsilon)
-                {
-                    printf("Wrong value of x0: %f\n", x_0);
-                    exit(1);
-                }
+                x_1 = atof(optarg);
+                NUMCHECK(x_1)
                 break;
             case 'y':
-                y_0 = atof(optarg);
-                if (y_0 - 0 < epsilon)
-                {
-                    printf("Wrong value of y0: %f\n", y_0);
-                    exit(1);
-                }
+                y_1 = atof(optarg);
+                NUMCHECK(y_1)
                 break;
             case 't':
-                t_0 = atof(optarg);
-                if (t_0 - 0 < epsilon)
-                {
-                    printf("Wrong value of t0: %f\n", t_0);
-                    exit(1);
-                }
+                t_1 = atof(optarg);
+                NUMCHECK(t_1)
                 break;
             case 'R':
                 Re = atof(optarg);
-                if (Re - 0 < epsilon)
-                {
-                    printf("Wrong number of Reynolds number: %f\n", Re);
-                    exit(1);
-                }
+                NUMCHECK(Re)
                 break;
             case 'G':
                 Gr = atof(optarg);
-                if (Gr - 0 < epsilon)
-                {
-                    printf("Wrong number of Grashof number: %f\n", Gr);
-                    exit(1);
-                }
+                NUMCHECK(Gr)
                 break;
             case 'P':
                 Pr = atof(optarg);
-                if (Pr - 0 < epsilon)
-                {
-                    printf("Wrong number of Prandtl number: %f\n", Pr);
-                    exit(1);
-                }
+                NUMCHECK(Pr)
                 break;
             case '?':
                 helper(argv[0]);
@@ -531,30 +394,27 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    hx = x_0 / N;
-    hy = y_0 / M;
-    tau = t_0 / K;
+    hx = x_1 / N;
+    hy = y_1 / M;
+    tau = t_1 / K;
     xi = 1.0 / (Re * Pr);
     nu = 1.0 / Re;
     rigth_beta = Gr / (Re * Re);
 
-    float T0 = 1.0/8.0;
-    float T1 = 1.0;
-
-    x = init_zero_1d(N+1);
-    y = init_zero_1d(M+1);
-    t = init_zero_1d(K);
-    temperature = init_zero_3d(N, M, K);
-    temperature12 = init_zero_3d(N, M, K);
-    omega = init_zero_3d(N, M, K);
-    omega12 = init_zero_3d(N, M, K);
-    psi = init_zero_2d(N, M);
-    u = init_zero_2d(N, M);
-    v = init_zero_2d(N, M);
-    alpha_x = init_zero_1d(N);
-    beta_x = init_zero_1d(N);
-    alpha_y = init_zero_1d(M);
-    beta_y = init_zero_1d(M);
+    x = init_zero_vector(N+1);
+    y = init_zero_vector(M+1);
+    t = init_zero_vector(K);
+    temperature = init_zero_matrix3d(N, M, K);
+    temperature12 = init_zero_matrix3d(N, M, K);
+    omega = init_zero_matrix3d(N, M, K);
+    omega12 = init_zero_matrix3d(N, M, K);
+    psi = init_zero_matrix(N, M);
+    u = init_zero_matrix(N, M);
+    v = init_zero_matrix(N, M);
+    alpha_x = init_zero_vector(N);
+    beta_x = init_zero_vector(N);
+    alpha_y = init_zero_vector(M);
+    beta_y = init_zero_vector(M);
     if ( x == NULL || y == NULL || t == NULL || \
          temperature == NULL || temperature12 == NULL || \
         omega == NULL || omega12 == NULL || psi == NULL || \
@@ -564,8 +424,6 @@ int main(int argc, char *argv[]) {
         free_arrays();
         exit(1);
     }
-
-
 
     for (int i = 0; i < N+1; i++)
         x[i] = i*hx;
@@ -580,15 +438,15 @@ int main(int argc, char *argv[]) {
     {
         for (int i = 0; i < N; i++)
         {
-            temperature[0][j][i] = exp(90*(y[j+1] - 1) - 0.289) + T0;
-            temperature12[0][j][i] = exp(90*(y[j+1] - 1) - 0.289) + T0;
+            temperature[0][j][i] = exp(-190*(x[i])) + T0;
+            temperature12[0][j][i] = exp(-190*(x[i])) + T0;
         }
     }
 
-    init_boundary_conditions(temperature, 't', 0, 1, T0);
-    init_boundary_conditions(temperature, 'b', 0, 1, T1);
-    init_boundary_conditions(temperature12, 't', 0, 1, T0);
-    init_boundary_conditions(temperature12, 'b', 0, 1, T1);
+    init_boundary_conditions(temperature, 'l', 0, 1, T0);
+    init_boundary_conditions(temperature, 'r', 0, 1, T1);
+    init_boundary_conditions(temperature12, 'l', 0, 1, T0);
+    init_boundary_conditions(temperature12, 'r', 0, 1, T1);
 
     printf("RUN CALCULATIONS\n");
     calculations();
