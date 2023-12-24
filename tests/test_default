@@ -7,7 +7,7 @@ LOGDIR=./log
 rm -rf ${LOGDIR}
 mkdir ${LOGDIR}
 
-${BINDIR}/convective_flow --time-points 10000 --x-points 10 --y-points 10 --x_0 1.0 --y_0 1.0 --t_0 1.0 --reynolds 1.0 --grashof 10000.0 --prandtl 1.0 > /dev/null
+${BINDIR}/convective_flow --time-points 10000 --x-points 10 --y-points 10 --x_1 1.0 --y_1 1.0 --t_1 1.0 --reynolds 1.0 --grashof 10000.0 --prandtl 1.0 > /dev/null
 result=$?
 
 if [ ${result} -ne 0 ]
