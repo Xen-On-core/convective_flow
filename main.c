@@ -3,6 +3,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <getopt.h>
+#include "utils/array.h"
 
 /*
  * We define the following variables describing the grid for calculations:
@@ -14,6 +15,8 @@
  *      hx, hy, tau : step by X, Y and time respectively
  *      
  */
+
+
 int N;
 int M;
 int K;
@@ -58,122 +61,6 @@ float *beta_x;
 float *alpha_y;
 float *beta_y;
 
-
-float *init_zero_1d(int size) {
-    float *array = malloc(sizeof(float) * size);
-    if (array == NULL) {
-        return NULL;
-    } 
-    for (int i = 0; i < size; i++)
-        array[i] = 0;
-
-    return array;
-}
-
-float **init_zero_2d(int x_size, int y_size) {
-    float **array = malloc(sizeof(float*) * y_size);
-    if (array == NULL) {
-        return NULL;
-    }
-    
-    for (int j = 0; j < y_size; j++){
-        array[j] = malloc(sizeof(float) * x_size);
-        if (array[j] == NULL) {
-            return NULL;
-        }
-    }
-    
-    for (int j = 0; j < y_size; j++)
-        for (int i = 0; i < x_size; i++)
-            array[j][i] = 0.0;
-
-    return array;
-}
-
-float ***init_zero_3d(int x_size, int y_size, int z_size) {
-    float ***array = malloc(sizeof(float**) * z_size);
-    if (array == NULL) {
-        return NULL;
-    }
-    
-    for (int k = 0; k < z_size; k++)
-    {
-        array[k] = malloc(sizeof(float*) * y_size);
-        if (array[k] == NULL) {
-            return NULL;
-        }
-        for (int j = 0; j < y_size; j++){
-            array[k][j] = malloc(sizeof(float) * x_size);
-            if (array[k][j] == NULL) {
-                return NULL;
-            }
-        }
-    }
-
-
-    for (int k = 0; k < z_size; k++)
-        for (int j = 0; j < y_size; j++)
-            for (int i = 0; i < x_size; i++)
-                array[k][j][i] = 0.0;
-
-    return array;
-}
-
-void free_1d_array(float *array) {
-    if (array != NULL) {
-        free(array);
-    }
-}
-
-void free_2d_array(float **array) {
-    if (array != NULL) {
-        for (int j = 0; j < M; j++)
-            if (array[j] != NULL) {
-                free(array[j]);
-            }
-        free(array);
-    }
-}
-
-void free_3d_array(float ***array) {
-    if (array != NULL) {
-        for (int k = 0; k < K; k++){
-            for (int j = 0; j < M; j++){
-                if (array[k][j] != NULL) {
-                    free(array[k][j]);
-                }
-            }
-        }
-        free(array);
-    }
-}
-
-void print_array_1d(float *array, int size) {
-    for (int i = 0; i < size; i++)
-        printf("%.4f ", array[i]);
-    printf("\n");
-}
-
-void print_array_2d(float **array) {
-    for (int j = 0; j < M; j++) {
-        for (int i = 0; i < N; i++)
-            printf("%.4f ", array[j][i]);
-        printf("\n");
-    }
-    printf("\n");
-}
-
-void print_array_3d(float ***array) {
-    for (int k = 0; k < K; k++) {
-        for (int j = 0; j < M; j++) {
-            for (int i = 0; i < N; i++)
-                printf("%.4f ", array[k][j][i]);
-            printf("\n");
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
 
 void init_boundary_conditions(float ***array, char side, int a, int b, float value) {
     switch (side)
@@ -389,13 +276,13 @@ void free_arrays(){
     free_1d_array(x);
     free_1d_array(y);
     free_1d_array(t);
-    free_3d_array(temperature);
-    free_3d_array(temperature12);
-    free_3d_array(omega);
-    free_3d_array(omega12);
-    free_2d_array(psi);
-    free_2d_array(u);
-    free_2d_array(v);
+    free_3d_array(temperature, K, M);
+    free_3d_array(temperature12, K, M);
+    free_3d_array(omega, K, M);
+    free_3d_array(omega12,K, M);
+    free_2d_array(psi, M);
+    free_2d_array(u, M);
+    free_2d_array(v, M);
     free_1d_array(alpha_x);
     free_1d_array(beta_x);
     free_1d_array(alpha_y);
