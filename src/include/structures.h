@@ -1,3 +1,5 @@
+#include "./utils/array.h"
+
 #ifndef BASESTRUCTURE 
 #define BASESTRUCTURE
 
@@ -50,20 +52,20 @@ typedef struct constants
  
 typedef struct solution
 {
-    float *x;
-    float *y;
-    float *t;
-    float ***temperature;
-    float ***temperature12;
-    float ***omega;
-    float ***omega12;
-    float **psi;
-    float **u;
-    float **v;
-    float *alpha_x;
-    float *beta_x;
-    float *alpha_y;
-    float *beta_y;
+    Vector x;
+    Vector y;
+    Vector t;
+    Matrix3D temperature;
+    Matrix3D temperature12;
+    Matrix3D omega;
+    Matrix3D omega12;
+    Matrix psi;
+    Matrix u;
+    Matrix v;
+    Vector alpha_x;
+    Vector beta_x;
+    Vector alpha_y;
+    Vector beta_y;
     Constants *Constants;
     Bounds *Bounds; 
     Steps *SM;
