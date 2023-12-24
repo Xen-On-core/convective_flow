@@ -15,8 +15,8 @@ jobs:
     - uses: actions/checkout@v3
 #     - name: configure
 #       run: ./configure
-      - name: Install Valgrind
-        run: |
+    - name: Install Valgrind
+      run: |
         sudo apt install valgrind
         echo "Valgrind installed"
     - name: make
