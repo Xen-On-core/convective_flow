@@ -1,57 +1,57 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "utils.h"
+#include "utils/array.h"
 
 int N;
 int M;
 int K;
 
 Vector init_zero_vector(int size) {
-    Vector array = malloc(sizeof(float) * size);
-    if (array == NULL) {
+    Vector vector = malloc(sizeof(float) * size);
+    if (vector == NULL) {
         return NULL;
     } 
     for (int i = 0; i < size; i++)
-        array[i] = 0;
+        vector[i] = 0;
 
-    return array;
+    return vector;
 }
 
 Matrix init_zero_matrix(int x_size, int y_size) {
-    Matrix array = malloc(sizeof(float*) * y_size);
-    if (array == NULL) {
+    Matrix matrix = malloc(sizeof(float*) * y_size);
+    if (matrix == NULL) {
         return NULL;
     }
     
     for (int j = 0; j < y_size; j++){
-        array[j] = malloc(sizeof(float) * x_size);
-        if (array[j] == NULL) {
+        matrix[j] = malloc(sizeof(float) * x_size);
+        if (matrix[j] == NULL) {
             return NULL;
         }
     }
     
     for (int j = 0; j < y_size; j++)
         for (int i = 0; i < x_size; i++)
-            array[j][i] = 0.0;
+            matrix[j][i] = 0.0;
 
-    return array;
+    return matrix;
 }
 
-Array3D init_zero_array3d(int x_size, int y_size, int z_size) {
-    Array3D array = malloc(sizeof(Matrix) * z_size);
-    if (array == NULL) {
+Matrix3D init_zero_array3d(int x_size, int y_size, int z_size) {
+    Matrix3D matrix = malloc(sizeof(Matrix) * z_size);
+    if (matrix == NULL) {
         return NULL;
     }
     
     for (int k = 0; k < z_size; k++)
     {
-        array[k] = malloc(sizeof(Vector) * y_size);
-        if (array[k] == NULL) {
+        matrix[k] = malloc(sizeof(Vector) * y_size);
+        if (matrix[k] == NULL) {
             return NULL;
         }
         for (int j = 0; j < y_size; j++){
-            array[k][j] = malloc(sizeof(float) * x_size);
-            if (array[k][j] == NULL) {
+            matrix[k][j] = malloc(sizeof(float) * x_size);
+            if (matrix[k][j] == NULL) {
                 return NULL;
             }
         }
@@ -61,60 +61,60 @@ Array3D init_zero_array3d(int x_size, int y_size, int z_size) {
     for (int k = 0; k < z_size; k++)
         for (int j = 0; j < y_size; j++)
             for (int i = 0; i < x_size; i++)
-                array[k][j][i] = 0.0;
+                matrix[k][j][i] = 0.0;
 
-    return array;
+    return matrix;
 }
 
-void free_vector(Vector array) {
-    if (array != NULL) {
-        free(array);
+void free_vector(Vector vector) {
+    if (vector != NULL) {
+        free(vector);
     }
 }
 
-void free_matrix(Matrix array) {
-    if (array != NULL) {
+void free_matrix(Matrix matrix) {
+    if (matrix != NULL) {
         for (int j = 0; j < M; j++)
-            if (array[j] != NULL) {
-                free(array[j]);
+            if (matrix[j] != NULL) {
+                free(matrix[j]);
             }
-        free(array);
+        free(matrix);
     }
 }
 
-void free_array3d(Array3D array) {
-    if (array != NULL) {
+void free_array3d(Matrix3D matrix) {
+    if (matrix != NULL) {
         for (int k = 0; k < K; k++){
             for (int j = 0; j < M; j++){
-                if (array[k][j] != NULL) {
-                    free(array[k][j]);
+                if (matrix[k][j] != NULL) {
+                    free(matrix[k][j]);
                 }
             }
         }
-        free(array);
+        free(matrix);
     }
 }
 
-void print_vector(float *array, int size) {
+void print_vector(Vector vector, int size) {
     for (int i = 0; i < size; i++)
-        printf("%.4f ", array[i]);
+        printf("%.4f ", vector[i]);
     printf("\n");
 }
 
-void print_matrix(float **array) {
+void print_matrix(Matrix matrix) {
     for (int j = 0; j < M; j++) {
         for (int i = 0; i < N; i++)
-            printf("%.4f ", array[j][i]);
+            printf("%.4f ", matrix[j][i]);
         printf("\n");
     }
     printf("\n");
 }
 
-void print_array3d(float ***array) {
+void print_array3d(Matrix3D matrix) {
     for (int k = 0; k < K; k++) {
         for (int j = 0; j < M; j++) {
             for (int i = 0; i < N; i++)
-                printf("%.4f ", array[k][j][i]);
+                printf("%.4f ", matrix[k][j][i]);
             printf("\n");
         }
         printf("\n");
