@@ -37,7 +37,7 @@ Matrix init_zero_matrix(int x_size, int y_size) {
     return matrix;
 }
 
-Matrix3D init_zero_array3d(int x_size, int y_size, int z_size) {
+Matrix3D init_zero_matrix3Dd(int x_size, int y_size, int z_size) {
     Matrix3D matrix = malloc(sizeof(Matrix) * z_size);
     if (matrix == NULL) {
         return NULL;
@@ -82,7 +82,7 @@ void free_matrix(Matrix matrix) {
     }
 }
 
-void free_array3d(Matrix3D matrix) {
+void free_matrix3Dd(Matrix3D matrix) {
     if (matrix != NULL) {
         for (int k = 0; k < K; k++){
             for (int j = 0; j < M; j++){
@@ -110,7 +110,7 @@ void print_matrix(Matrix matrix) {
     printf("\n");
 }
 
-void print_array3d(Matrix3D matrix) {
+void print_matrix3Dd(Matrix3D matrix) {
     for (int k = 0; k < K; k++) {
         for (int j = 0; j < M; j++) {
             for (int i = 0; i < N; i++)

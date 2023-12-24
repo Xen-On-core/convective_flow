@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include "utils.h"
+#include "utils/array.h"
 
 float epsilon = 1e-6;
 #define NUMCHECK(number) \
@@ -60,10 +60,10 @@ float rigth_beta;
 Vector x;
 Vector y;
 Vector t;
-Array3D temperature;
-Array3D temperature12;
-Array3D omega;
-Array3D omega12;
+Matrix3D temperature;
+Matrix3D temperature12;
+Matrix3D omega;
+Matrix3D omega12;
 Matrix psi;
 Matrix u;
 Matrix v;
@@ -72,7 +72,7 @@ Vector beta_x;
 Vector alpha_y;
 Vector beta_y;
 
-void init_boundary_conditions(Array3D array, char side, int a, int b, float value) {
+void init_boundary_conditions(Matrix3D array, char side, int a, int b, float value) {
     switch (side)
     {
     case 'l':
@@ -284,10 +284,10 @@ void free_arrays(){
     free_vector(x);
     free_vector(y);
     free_vector(t);
-    free_array3d(temperature);
-    free_array3d(temperature12);
-    free_array3d(omega);
-    free_array3d(omega12);
+    free_matrix3Dd(temperature);
+    free_matrix3Dd(temperature12);
+    free_matrix3Dd(omega);
+    free_matrix3Dd(omega12);
     free_matrix(psi);
     free_matrix(u);
     free_matrix(v);
@@ -404,10 +404,10 @@ int main(int argc, char *argv[]) {
     x = init_zero_vector(N+1);
     y = init_zero_vector(M+1);
     t = init_zero_vector(K);
-    temperature = init_zero_array3d(N, M, K);
-    temperature12 = init_zero_array3d(N, M, K);
-    omega = init_zero_array3d(N, M, K);
-    omega12 = init_zero_array3d(N, M, K);
+    temperature = init_zero_matrix3Dd(N, M, K);
+    temperature12 = init_zero_matrix3Dd(N, M, K);
+    omega = init_zero_matrix3Dd(N, M, K);
+    omega12 = init_zero_matrix3Dd(N, M, K);
     psi = init_zero_matrix(N, M);
     u = init_zero_matrix(N, M);
     v = init_zero_matrix(N, M);
