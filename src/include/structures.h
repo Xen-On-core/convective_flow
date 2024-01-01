@@ -1,4 +1,4 @@
-#include "./utils/array.h"
+#include "utils/array.h"
 
 #ifndef BASESTRUCTURE 
 #define BASESTRUCTURE
@@ -68,7 +68,18 @@ typedef struct solution
     Vector beta_y;
     Constants *Constants;
     Bounds *Bounds; 
-    Steps *SM;
+    Steps *STP;
 } Solution;
+
+typedef struct starter_pack {
+    int N;
+    int M;
+    int K;
+    float x_1;
+    float y_1;
+    float t_1;
+    float T_0;
+    float T_1;
+}StarterPack;
 
 #endif

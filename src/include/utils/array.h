@@ -2,8 +2,9 @@
 #define UTILS_H
 
 typedef float* Vector;
-typedef float** Matrix;
-typedef float*** Matrix3D;
+typedef float** Matrix; 
+typedef float*** Matrix3D; 
+
 
 Vector init_zero_vector(int size);
 Matrix init_zero_matrix(int x_size, int y_size);
