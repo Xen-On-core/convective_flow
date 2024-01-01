@@ -23,9 +23,7 @@ float epsilon = 1e-6;
  *      t_1 : end time value
  *      hx, hy, tau : step by X, Y and time respectively
  */
-extern int N;
-extern int M;
-extern int K;
+
 float x_scale = 1;
 float y_scale = 1;
 float time_scale = 1;

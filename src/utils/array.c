@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils/array.h"
-
-int N;
-int M;
-int K;
+#include "structures.h"
 
 Vector init_zero_vector(int size) {
     Vector vector = malloc(sizeof(float) * size);
@@ -72,9 +69,9 @@ void free_vector(Vector vector) {
     }
 }
 
-void free_matrix(Matrix matrix) {
+void free_matrix(Matrix matrix, Steps S) {
     if (matrix != NULL) {
-        for (int j = 0; j < M; j++)
+        for (int j = 0; j < S.M; j++)
             if (matrix[j] != NULL) {
                 free(matrix[j]);
             }
@@ -82,10 +79,10 @@ void free_matrix(Matrix matrix) {
     }
 }
 
-void free_matrix3d(Matrix3D matrix) {
+void free_matrix3d(Matrix3D matrix, Steps S) {
     if (matrix != NULL) {
-        for (int k = 0; k < K; k++){
-            for (int j = 0; j < M; j++){
+        for (int k = 0; k < S.K; k++){
+            for (int j = 0; j < S.M; j++){
                 if (matrix[k][j] != NULL) {
                     free(matrix[k][j]);
                 }
@@ -101,19 +98,19 @@ void print_vector(Vector vector, int size) {
     printf("\n");
 }
 
-void print_matrix(Matrix matrix) {
-    for (int j = 0; j < M; j++) {
-        for (int i = 0; i < N; i++)
+void print_matrix(Matrix matrix,Steps S) {
+    for (int j = 0; j < S.M; j++) {
+        for (int i = 0; i < S.N; i++)
             printf("%.4f ", matrix[j][i]);
         printf("\n");
     }
     printf("\n");
 }
 
-void print_matrix3d(Matrix3D matrix) {
-    for (int k = 0; k < K; k++) {
-        for (int j = 0; j < M; j++) {
-            for (int i = 0; i < N; i++)
+void print_matrix3d(Matrix3D matrix, Steps S) {
+    for (int k = 0; k < S.K; k++) {
+        for (int j = 0; j < S.M; j++) {
+            for (int i = 0; i < S.N; i++)
                 printf("%.4f ", matrix[k][j][i]);
             printf("\n");
         }
