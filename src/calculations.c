@@ -1,11 +1,14 @@
+#include <malloc.h>
+#include <math.h>
+#include <stdio.h>
 #include "structures.h"
 #include "utils/array.h"
-#include <malloc.h>
+#include "calculations.h"
 
 int NewBounds(Bounds *B, float t_1, float x_1, float y_1) {
-    B->t_1 = 1.0;
-    B->x_1 = 1.0;
-    B->y_1 = 1.0;
+    B->t_1 = t_1;
+    B->x_1 = x_1;
+    B->y_1 = y_1;
 
     B->x_0 = 0.0;
     B->y_0 = 0.0;
@@ -22,31 +25,51 @@ int NewSteps(Steps *S, Bounds *B, int N, int M, int K) {
     return 0;
 }
 
-int NewConstants(Constants *C) {
-    C->Gr = 10000.0;
-    C->Re = 1.0;
-    C->Pr = 1.0;
+int NewConstants(Constants *C, StarterPack TSPKG) {
+    C->Gr = TSPKG.Gr;
+    C->Re = TSPKG.Re;
+    C->Pr = TSPKG.Pr;
     C->xi = 1.0 / (C->Re * C->Pr);
     C->nu = 1.0 / (C->Re);
     C->rigth_beta = C->Gr / (C->Re * C->Re);
+
     return 0;
 }
 
-int AllocSolutionArrays(Solution *SLTB, Steps *STP) {
-    SLTB->x = init_row(STP->N+1);
-    SLTB->y = init_row(STP->M+1);
-    SLTB->t = init_row(STP->K);
-    SLTB->temperature = init_tensor(STP->N, STP->M, STP->K);
-    SLTB->temperature12 = init_tensor(STP->N, STP->M, STP->K);
-    SLTB->omega = init_tensor(STP->N, STP->M, STP->K);
-    SLTB->omega12 = init_tensor(STP->N, STP->M, STP->K);
-    SLTB->psi = init_matrix(STP->N, STP->M);
-    SLTB->u = init_matrix(STP->N, STP->M);
-    SLTB->v = init_matrix(STP->N, STP->M);
-    SLTB->alpha_x = init_row(STP->N);
-    SLTB->beta_x = init_row(STP->N);
-    SLTB->alpha_y = init_row(STP->M);
-    SLTB->beta_y = init_row(STP->M);
+void FreeSLTButionContainers(Solution * SLTB, Steps S){
+    printf("\nFREEE ALL ALLOCATED MEMORY\n");
+    free_vector(SLTB->x);
+    free_vector(SLTB->y);
+    free_vector(SLTB->t);
+    free_matrix3d(SLTB->temperature, S);
+    free_matrix3d(SLTB->temperature12, S);
+    free_matrix3d(SLTB->omega, S);
+    free_matrix3d(SLTB->omega12, S);
+    free_matrix(SLTB->psi, S);
+    free_matrix(SLTB->u, S);
+    free_matrix(SLTB->v, S);
+    free_vector(SLTB->alpha_x);
+    free_vector(SLTB->beta_x);
+    free_vector(SLTB->alpha_y);
+    free_vector(SLTB->beta_y);
+    
+}
+
+int AllocSolutionArrays(Solution *SLTB, Steps STP) {
+    SLTB->x = init_zero_vector(STP.N+1);
+    SLTB->y = init_zero_vector(STP.M+1);
+    SLTB->t = init_zero_vector(STP.K);
+    SLTB->temperature = init_zero_matrix3d(STP.N, STP.M, STP.K);
+    SLTB->temperature12 = init_zero_matrix3d(STP.N, STP.M, STP.K);
+    SLTB->omega = init_zero_matrix3d(STP.N, STP.M, STP.K);
+    SLTB->omega12 = init_zero_matrix3d(STP.N, STP.M, STP.K);
+    SLTB->psi = init_zero_matrix(STP.N, STP.M);
+    SLTB->u = init_zero_matrix(STP.N, STP.M);
+    SLTB->v = init_zero_matrix(STP.N, STP.M);
+    SLTB->alpha_x = init_zero_vector(STP.N);
+    SLTB->beta_x = init_zero_vector(STP.N);
+    SLTB->alpha_y = init_zero_vector(STP.M);
+    SLTB->beta_y = init_zero_vector(STP.M);
     if ( SLTB->x == NULL || SLTB->y == NULL || SLTB->t == NULL || \
         SLTB->temperature == NULL || SLTB->temperature12 == NULL || \
         SLTB->omega == NULL || SLTB->omega12 == NULL || SLTB->psi == NULL || \
@@ -59,14 +82,14 @@ int AllocSolutionArrays(Solution *SLTB, Steps *STP) {
     }
 
     // TODO: Replace it in right place
-    for (int i = 0; i < STP->N+1; i++)
-        SLTB->x[i] = i*STP->hx;
+    for (int i = 0; i < STP.N+1; i++)
+        SLTB->x[i] = i*STP.hx;
 
-    for (int j = 0; j < STP->M+1; j++)
-        SLTB->y[j] = j*STP->hy;
+    for (int j = 0; j < STP.M+1; j++)
+        SLTB->y[j] = j*STP.hy;
 
-    for (int k = 0; k < STP->K; k++)
-        SLTB->t[k] = k*STP->tau;
+    for (int k = 0; k < STP.K; k++)
+        SLTB->t[k] = k*STP.tau;
 
     
 
@@ -115,8 +138,6 @@ void calculations(Solution *SLTB, double T_0, double T_1) {
     int N = SLTB->STP->N, M = SLTB->STP->M, K = SLTB->STP->K;
     float hx = SLTB->STP->hx, hy = SLTB->STP->hy, tau = SLTB->STP->tau; 
     float xi = SLTB->Constants->xi,
-          Gr = SLTB->Constants->Gr,
-          Pr = SLTB->Constants->Pr,
           nu = SLTB->Constants->nu, 
           rigth_beta = SLTB->Constants->rigth_beta;
 
@@ -203,8 +224,8 @@ void calculations(Solution *SLTB, double T_0, double T_1) {
                 float A = coef_x * (nu/hx + SLTB->u[j][i]/2);
                 float B = coef_x * (nu/hx - SLTB->u[j][i]/2);
                 float C = 1 + tau * nu / (hx * hx);
-                float F = omega[k][j][i] - tau*SLTB->v[j][i]/(4*hy)*(omega[k][j+1][i] - omega[k][j-1][i]) + \
-                            tau*nu/(2*hy*hy)*(omega[k][j+1][i] - 2*omega[k][j][i] + omega[k][j-1][i]) + \
+                float F = SLTB->omega[k][j][i] - tau*SLTB->v[j][i]/(4*hy)*(SLTB->omega[k][j+1][i] - SLTB->omega[k][j-1][i]) + \
+                            tau*nu/(2*hy*hy)*(SLTB->omega[k][j+1][i] - 2*SLTB->omega[k][j][i] + SLTB->omega[k][j-1][i]) + \
                             tau*rigth_beta/(4*hx*hx)*(SLTB->temperature[k][j][i+1] - SLTB->temperature[k][j][i-1]);
 
                 SLTB->alpha_x[i+1] = B / (C - A * SLTB->alpha_x[i]);
@@ -242,7 +263,7 @@ void calculations(Solution *SLTB, double T_0, double T_1) {
             SLTB->omega[k+1][M-1][i] = -2 / (hy*hy) * SLTB->psi[M-2][i];
             for (int j = M-2; j >= 0; j--)
             {
-                SLTB->omega[k+1][j][i] = SLTB->alpha_y[j+1] * omega[k+1][j+1][i] + SLTB->beta_y[j+1];
+                SLTB->omega[k+1][j][i] = SLTB->alpha_y[j+1] * SLTB->omega[k+1][j+1][i] + SLTB->beta_y[j+1];
                 SLTB->omega[k+1][j][N-1] = -2 / (hy*hy) * SLTB->psi[j][N-2];
                 SLTB->omega[k+1][j][0] = -2 / (hy*hy) * SLTB->psi[j][1];
             }
@@ -278,7 +299,7 @@ void calculations(Solution *SLTB, double T_0, double T_1) {
 }
 
 
-int NewSolution(StarterPack STRPCK){
+int FindSolution(StarterPack STRPCK){
     int exitcode = 0;
     Bounds* BNDS = (Bounds*)malloc(sizeof(Bounds));
     Steps* STP = (Steps*)malloc(sizeof(Steps));
@@ -291,34 +312,100 @@ int NewSolution(StarterPack STRPCK){
     if ( exitcode != 0 ){
         return exitcode;
     }
-    exitcode = NewConstants(CNST);
+    exitcode = NewConstants(CNST, STRPCK);
     if ( exitcode != 0 ){
         return exitcode;
     }
     Solution * SLTB = \
         (Solution *)malloc(sizeof(Solution));
 
-    exitcode = AllocSolutionArrays(SLTB, STP);
+    exitcode = AllocSolutionArrays(SLTB, *STP);
     if ( exitcode != 0 ){
         return exitcode;
     }
     SLTB->STP = STP;
     SLTB->Bounds = BNDS;
     SLTB->Constants = CNST;
-    
+
     for (int j = 0; j < STP->M; j++)
     {
         for (int i = 0; i < STP->N; i++)
         {
-            SLTB->temperature[0][j][i] = exp(-190*(SLTB->x[i])) + STRPCK.T_0;
-            SLTB->temperature12[0][j][i] = exp(-190*(SLTB->x[i])) + STRPCK.T_0;
+            SLTB->temperature[0][j][i] = 0;
+            SLTB->temperature12[0][j][i] = 0;
         }
     }
+    print_vector(SLTB->x, STRPCK.N + 1);
     init_boundary_conditions(SLTB->temperature, 'l', 0, 1, STRPCK.T_0, STP);
     init_boundary_conditions(SLTB->temperature, 'r', 0, 1, STRPCK.T_1, STP);
     init_boundary_conditions(SLTB->temperature12, 'l', 0, 1, STRPCK.T_0, STP);
-    init_boundary_conditions(SLTB->temperature12, 'r', 0, 1, STRPCK.T_0, STP);
+    init_boundary_conditions(SLTB->temperature12, 'r', 0, 1, STRPCK.T_1, STP);
+    printf("RUN CALCULATIONS\n");
+    
+    printf("STRPCK.T_0 = %f\n", STRPCK.T_0);
+    printf("STRPCK.T_1 = %f\n", STRPCK.T_1);
 
+    printf("SLTB->Bounds->t_1 = %f\n", SLTB->Bounds->t_1);
+    printf("SLTB->Bounds->x_1 = %f\n", SLTB->Bounds->x_1);
+    printf("SLTB->Bounds->y_1 = %f\n", SLTB->Bounds->y_1);
 
+    printf("SLTB->Steps->hx = %f\n", SLTB->STP->hx);
+    printf("SLTB->Steps->hy = %f\n", SLTB->STP->hy);
+    printf("SLTB->Steps->tau = %f\n", SLTB->STP->tau);
 
+    printf("SLTB->Constants->Gr = %f\n", SLTB->Constants->Gr);
+    printf("SLTB->Constants->Pr = %f\n", SLTB->Constants->Pr);
+    printf("SLTB->Constants->Re = %f\n", SLTB->Constants->Re);
+    
+
+    calculations(SLTB, STRPCK.T_0, STRPCK.T_1);
+    printf("\tSuccessful!\n");
+    
+    printf("SAVE DATA\n");
+    FILE* temp = fopen("./output_data/Temp.txt", "w");
+    FILE* Omg = fopen("./output_data/Omg.txt", "w");
+    FILE* Psi = fopen("./output_data/Psi.txt", "w");
+    if (temp == NULL || Omg == NULL || Psi == NULL)
+        return -1;
+
+    for (int j = 0; j < STRPCK.M; j++)
+    {
+        for (int i = 0; i < STRPCK.N; i++)
+        {
+            fprintf(temp, "%.4f ", SLTB->temperature[STRPCK.K-1][j][i]);
+            fprintf(Omg, "%.4f ", SLTB->omega[STRPCK.K-1][j][i]);
+            fprintf(Psi, "%.4f ", SLTB->psi[j][i]);
+        }
+        fprintf(temp, "%c", '\n');
+        fprintf(Omg, "%c", '\n');
+        fprintf(Psi, "%c", '\n');
+    }
+
+    fclose(temp);
+    fclose(Omg);
+    fclose(Psi);
+    printf("\tSuccessful!\n");
+
+    printf("SAVE TIME DATA\n");
+    FILE* temp_all = fopen("./output_data/temp_all.txt", "w");
+    if (temp_all == NULL)
+        return -1;
+    
+    for (int k = 0; k < STRPCK.K; k+=10)
+    {
+        for (int j = 0; j < STRPCK.M; j++)
+        {
+            for (int i = 0; i < STRPCK.N; i++)
+            {
+                fprintf(temp_all, "%.4f ", SLTB->temperature[k][j][i]);
+            }
+        }
+        fprintf(temp_all, "%c", '\n');
+    }
+
+    fclose(temp_all);
+    printf("\tSuccessful!\n");
+    AllocSolutionArrays(SLTB, *STP);
+    printf("\tSuccessful!\n");
+    return 0;
 }

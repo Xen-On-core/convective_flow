@@ -1,7 +1,8 @@
 TESTS = ./tests/test_default
 CFLAGS = -O2 -Wall
 OBJECTS = ./src/main.o \
-		  ./src/utils/array.o	
+		  ./src/utils/array.o \
+		  ./src/calculations.o
 INCLUDES = ./src/include/
 DATADIR = ./output_data
 BINFILE = ./bin/convective_flow
@@ -17,6 +18,7 @@ endif
 
 utils: 
 	gcc $(CFLAGS) -c src/utils/array.c -I $(INCLUDES) -o src/utils/array.o
+	gcc $(CFLAGS) -c src/calculations.c -I $(INCLUDES) -o src/calculations.o
 
 clean:
 	find -name '*.o' -delete

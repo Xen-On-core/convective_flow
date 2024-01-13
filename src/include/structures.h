@@ -1,7 +1,10 @@
-#include "utils/array.h"
-
 #ifndef BASESTRUCTURE 
 #define BASESTRUCTURE
+
+typedef float* Vector;
+typedef float** Matrix; 
+typedef float*** Matrix3D; 
+
 
 /*
  * We define the following variables describing the grid for calculations:
@@ -80,6 +83,9 @@ typedef struct starter_pack {
     float t_1;
     float T_0;
     float T_1;
+    float Re;
+    float Gr;
+    float Pr;
 }StarterPack;
 
 #endif
