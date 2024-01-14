@@ -17,7 +17,7 @@ jobs:
 #       run: ./configure
     - name: Install Valgrind
       run: |
-        sudo apt-get -qq update
+        sudo apt-get update --fix-missing
         sudo apt install valgrind
         echo "Valgrind installed"
     - name: make
