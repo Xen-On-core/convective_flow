@@ -1,7 +1,7 @@
 TESTS = ./tests/test_default
 CFLAGS = -O2 -Wall
 OBJECTS = ./src/main.o \
-		  ./src/utils/array.o	
+		  ./src/utils/array.o
 INCLUDES = ./src/include/
 DATADIR = ./output_data
 BINFILE = ./bin/convective_flow

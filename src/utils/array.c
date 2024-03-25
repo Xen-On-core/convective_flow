@@ -2,122 +2,190 @@
 #include <stdlib.h>
 #include "utils/array.h"
 
-int N;
-int M;
-int K;
+extern int N;
+extern int M;
+extern int K;
+extern int T;
 
-Vector init_zero_vector(int size) {
-    Vector vector = malloc(sizeof(float) * size);
-    if (vector == NULL) {
+Vector init_zero_vector(int size)
+{
+    Vector vector = malloc(sizeof(double) * size);
+    if (vector == NULL)
         return NULL;
-    } 
+ 
     for (int i = 0; i < size; i++)
         vector[i] = 0;
 
     return vector;
 }
 
-Matrix init_zero_matrix(int x_size, int y_size) {
-    Matrix matrix = malloc(sizeof(float*) * y_size);
-    if (matrix == NULL) {
+Matrix init_zero_matrix(int x_size, int y_size)
+{
+    Matrix matrix = malloc(sizeof(Vector) * y_size);
+    if (matrix == NULL)
         return NULL;
-    }
-    
-    for (int j = 0; j < y_size; j++){
-        matrix[j] = malloc(sizeof(float) * x_size);
-        if (matrix[j] == NULL) {
-            return NULL;
-        }
-    }
-    
+
     for (int j = 0; j < y_size; j++)
-        for (int i = 0; i < x_size; i++)
-            matrix[j][i] = 0.0;
+        matrix[j] = init_zero_vector(x_size);
 
     return matrix;
 }
 
-Matrix3D init_zero_matrix3d(int x_size, int y_size, int z_size) {
+Matrix3D init_zero_matrix3d(int x_size, int y_size, int z_size)
+{
     Matrix3D matrix = malloc(sizeof(Matrix) * z_size);
-    if (matrix == NULL) {
+    if (matrix == NULL)
         return NULL;
-    }
     
     for (int k = 0; k < z_size; k++)
-    {
-        matrix[k] = malloc(sizeof(Vector) * y_size);
-        if (matrix[k] == NULL) {
-            return NULL;
-        }
-        for (int j = 0; j < y_size; j++){
-            matrix[k][j] = malloc(sizeof(float) * x_size);
-            if (matrix[k][j] == NULL) {
-                return NULL;
-            }
-        }
-    }
-
-
-    for (int k = 0; k < z_size; k++)
-        for (int j = 0; j < y_size; j++)
-            for (int i = 0; i < x_size; i++)
-                matrix[k][j][i] = 0.0;
+        matrix[k] = init_zero_matrix(x_size, y_size);
 
     return matrix;
 }
 
-void free_vector(Vector vector) {
-    if (vector != NULL) {
+TimeVector init_zero_time_vector(int time_size, int size)
+{
+    TimeVector vector = malloc(sizeof(Vector) * time_size);
+    if (vector == NULL)
+        return NULL;
+ 
+    for (int t = 0; t < time_size; t++)
+        vector[t] = init_zero_vector(size);
+
+    return vector;
+}
+
+TimeMatrix init_zero_time_matrix(int time_size, int x_size, int y_size)
+{
+    TimeMatrix matrix = malloc(sizeof(Matrix) * time_size);
+    if (matrix == NULL)
+        return NULL;
+
+    for (int t = 0; t < time_size; t++)
+        matrix[t] = init_zero_matrix(x_size, y_size);
+
+    return matrix;
+}
+
+TimeMatrix3D init_zero_time_matrix3d(int time_size, int x_size, int y_size, int z_size)
+{
+    TimeMatrix3D matrix = malloc(sizeof(Matrix3D) * time_size);
+    if (matrix == NULL)
+        return NULL;
+    
+    for (int t = 0; t < time_size; t++)
+        matrix[t] = init_zero_matrix3d(x_size, y_size, z_size);
+
+    return matrix;
+}
+
+void free_vector(Vector vector)
+{
+    if (vector != NULL)
         free(vector);
-    }
 }
 
-void free_matrix(Matrix matrix) {
-    if (matrix != NULL) {
-        for (int j = 0; j < M; j++)
-            if (matrix[j] != NULL) {
-                free(matrix[j]);
-            }
-        free(matrix);
-    }
+void free_matrix(Matrix matrix)
+{
+    if (matrix == NULL)
+        return;
+    
+    for (int j = 0; j < M; j++)
+        free_vector(matrix[j]);
+    free(matrix);
 }
 
-void free_matrix3d(Matrix3D matrix) {
-    if (matrix != NULL) {
-        for (int k = 0; k < K; k++){
-            for (int j = 0; j < M; j++){
-                if (matrix[k][j] != NULL) {
-                    free(matrix[k][j]);
-                }
-            }
-        }
-        free(matrix);
-    }
+void free_matrix3d(Matrix3D matrix)
+{
+    if (matrix == NULL)
+        return;
+    
+    for (int k = 0; k < K; k++)
+        free_matrix(matrix[k]);
+    free(matrix);
 }
 
-void print_vector(Vector vector, int size) {
-    for (int i = 0; i < size; i++)
+void free_time_vector(TimeVector vector)
+{
+    if (vector == NULL)
+        return;
+
+    for (int t = 0; t < T; t++)
+        free_vector(vector[t]);
+    free(vector);
+}
+
+void free_time_matrix(TimeMatrix matrix)
+{
+    if (matrix == NULL)
+        return;
+
+    for (int t = 0; t < T; t++)
+        free_matrix(matrix[t]);
+    free(matrix);
+}
+
+void free_time_matrix3d(TimeMatrix3D matrix)
+{
+    if (matrix == NULL)
+        return;
+
+    for (int t = 0; t < T; t++)
+        free_matrix3d(matrix[t]);   
+    free(matrix);
+}
+
+void print_vector(Vector vector)
+{
+    for (int i = 0; i < N; i++)
         printf("%.4f ", vector[i]);
     printf("\n");
 }
 
 void print_matrix(Matrix matrix) {
-    for (int j = 0; j < M; j++) {
-        for (int i = 0; i < N; i++)
-            printf("%.4f ", matrix[j][i]);
-        printf("\n");
-    }
+    for (int j = 0; j < M; j++)
+            print_vector(matrix[j]);
     printf("\n");
 }
 
 void print_matrix3d(Matrix3D matrix) {
-    for (int k = 0; k < K; k++) {
-        for (int j = 0; j < M; j++) {
-            for (int i = 0; i < N; i++)
-                printf("%.4f ", matrix[k][j][i]);
-            printf("\n");
-        }
-        printf("\n");
+    for (int k = 0; k < K; k++)
+        print_matrix(matrix[k]);
+    printf("\n");
+}
+
+void print_time_vector(TimeVector vector, int step) {
+    if (step == 0)
+    {
+        printf("ERROR! Step for time cannot be equal zero!");
+        return;
     }
+
+    for(int t = 0; t < T; t+=step)
+        print_vector(vector[t]);
+    printf("\n");
+}
+
+void print_time_matrix(TimeMatrix matrix, int step) {
+    if (step == 0)
+    {
+        printf("ERROR! Step for time cannot be equal zero!");
+        return;
+    }
+
+    for (int t = 0; t < T; t+=step)
+        print_matrix(matrix[t]);
+    printf("\n");
+}
+
+void print_time_matrix3d(TimeMatrix3D matrix, int step) {
+    if (step == 0)
+    {
+        printf("ERROR! Step for time cannot be equal zero!");
+        return;
+    }
+
+    for (int t = 0; t < T; t+=step) 
+        print_matrix3d(matrix[t]);
     printf("\n");
 }

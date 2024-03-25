@@ -5,8 +5,13 @@
 #include <getopt.h>
 
 #include "utils/array.h"
+#include "utils/grid.h"
+#include "utils/utils.h"
+#include "utils/solutions.h"
 
-float epsilon = 1e-6;
+
+
+double epsilon = 1e-6;
 #define NUMCHECK(number) \
             if (abs(number - 0) < epsilon) { \
                 printf("Wrong value of %s: %f\n", #number, number); \
@@ -23,48 +28,32 @@ float epsilon = 1e-6;
  *      t_1 : end time value
  *      hx, hy, tau : step by X, Y and time respectively
  */
-extern int N;
-extern int M;
-extern int K;
-float x_scale = 1;
-float y_scale = 1;
-float time_scale = 1;
-float x_0 = 0.0;
-float y_0 = 0.0;
-float x_1 = 1.0;
-float y_1 = 1.0;
-float t_1 = 1.0;
-float hx;
-float hy;
-float tau;
-float T0 = 1.0/4.0;
-float T1 = 1.0;
+int N;
+int M;
+int K;
+int T;
+double x_0 = 0.0;
+double y_0 = 0.0;
+double x_1 = 1.0;
+double y_1 = 1.0;
+double t_1 = 1.0;
+double hx;
+double hy;
+double tau;
+double T0 = 1.0/4.0;
+double T1 = 1.0;
 
+CFP cfparams;
+Grid2D grid;
+CFS_2D solution;
 
-/*
- * Defining constants:
- *      Re : Reynolds number
- *      Pr : Prandtl number
- *      Gr : Grashof number
- *      xi : coefficient of thermal conductivity
- *      nu : coefficient of kinematic viscosity
- *      right_beta : coefficient of thermal expansion
- */
-float Re = 1.0;
-float Gr = 10000.0;
-float Pr = 1.0;
-float xi;
-float nu;
-float rigth_beta;
-
-Vector x;
-Vector y;
 Vector t;
 Matrix3D temperature;
 Matrix3D temperature12;
 Matrix3D omega;
 Matrix3D omega12;
-Matrix psi;
+Matrix3D psi;
+Matrix3D psi12;
 Matrix u;
 Matrix v;
 Vector alpha_x;
@@ -72,7 +61,8 @@ Vector beta_x;
 Vector alpha_y;
 Vector beta_y;
 
-void init_boundary_conditions(Matrix3D array, char side, int a, int b, float value) {
+void init_boundary_conditions(Matrix3D array, char side, int a, int b, double value)
+{
     switch (side)
     {
     case 'l':
@@ -104,7 +94,8 @@ void init_boundary_conditions(Matrix3D array, char side, int a, int b, float val
     }
 }
 
-void calculations() {
+void calculations()
+{
     /*
      * Global cycle for time
      */
@@ -113,7 +104,7 @@ void calculations() {
         /*
          * Run back-for by X for over Y on n+1/2 layer
          */
-        float coef_x = tau/(2*hx);
+        double coef_x = tau/(2*hx);
         for (int j = 1; j < M-1; j++)
         {
             alpha_x[1] = 0;
@@ -121,18 +112,18 @@ void calculations() {
 
             for (int i = 1; i < N-1; i++)
             {
-                float A = coef_x * (xi/hx + u[j][i]/2);
-                float B = coef_x * (xi/hx - u[j][i]/2);
-                float C = 1 + tau * xi / (hx * hx);
-                float F = temperature[k][j][i] - tau*v[j][i]/(4*hy)*(temperature[k][j+1][i] - temperature[k][j-1][i]) + \
-                            tau*xi/(2*hy*hy)*(temperature[k][j+1][i] - 2*temperature[k][j][i] + temperature[k][j-1][i]);
+                double A = coef_x * (cfparams.xi/hx + u[j][i]/2);
+                double B = coef_x * (cfparams.xi/hx - u[j][i]/2);
+                double C = 1 + tau * cfparams.xi / (hx * hx);
+                double F = temperature[k][j][i] - tau*v[j][i]/(4*hy)*(temperature[k][j+1][i] - temperature[k][j-1][i]) + \
+                            tau*cfparams.xi/(2*hy*hy)*(temperature[k][j+1][i] - 2*temperature[k][j][i] + temperature[k][j-1][i]);
                 
 
                 alpha_x[i+1] = B / (C - A * alpha_x[i]);
                 beta_x[i+1] = (A * beta_x[i] + F) / (C - A * alpha_x[i]);
             }
 
-            temperature12[k][j][N-1] = T1;
+            temperature12[k][j][N-1] = T1; //(tau*k >= 0.5) ? (T1+1.0) : T1 + 2*tau*k;
             for (int i = N-2; i >= 0; i--)
             {
                 temperature12[k][j][i] = alpha_x[i+1] * temperature12[k][j][i+1] + beta_x[i+1];
@@ -142,7 +133,7 @@ void calculations() {
         /*
          * Run back-for by Y for over X on n+1 layer
          */
-        float coef_y = tau/(2*hy);
+        double coef_y = tau/(2*hy);
         for (int i = 1; i < N-1; i++)
         {
             // alpha - a second-order condition.
@@ -152,11 +143,11 @@ void calculations() {
 
             for (int j = 1; j < M-1; j++)
             {
-                float A = coef_y * (xi/hy + v[j][i]/2);
-                float B = coef_y * (xi/hy - v[j][i]/2);
-                float C = 1 + tau * xi / (hy * hy);
-                float F = temperature12[k][j][i] - tau*u[j][i]/(4*hx)*(temperature12[k][j][i+1] - temperature12[k][j][i-1]) + \
-                            tau*xi/(2*hx*hx)*(temperature12[k][j][i+1] - 2*temperature12[k][j][i] + temperature12[k][j][i-1]);
+                double A = coef_y * (cfparams.xi/hy + v[j][i]/2);
+                double B = coef_y * (cfparams.xi/hy - v[j][i]/2);
+                double C = 1 + tau * cfparams.xi / (hy * hy);
+                double F = temperature12[k][j][i] - tau*u[j][i]/(4*hx)*(temperature12[k][j][i+1] - temperature12[k][j][i-1]) + \
+                            tau*cfparams.xi/(2*hx*hx)*(temperature12[k][j][i+1] - 2*temperature12[k][j][i] + temperature12[k][j][i-1]);
 
                 alpha_y[j+1] = B / (C - A * alpha_y[j]);
                 beta_y[j+1] = (A * beta_y[j] + F) / (C - A * alpha_y[j]);
@@ -166,8 +157,8 @@ void calculations() {
             for (int j = M-2; j >= 0; j--)
             {
                 temperature[k+1][j][i] = alpha_y[j+1] * temperature[k+1][j+1][i] + beta_y[j+1];
-                // temperature[k+1][j][0] = temperature[k+1][j][1];
-                // temperature[k+1][j][N-1] = temperature[k+1][j][N-2];
+                // temperature[k+1][j][0] = T0;
+                // temperature[k+1][j][N-1] = (k >= 0.5) ? (T1+1) : (T1 + 2*tau*(k+1));
             }
         }
         
@@ -179,26 +170,28 @@ void calculations() {
             // alpha - a second-order condition.
             // beta - a first-order condition.
             alpha_x[1] = 0;
-            beta_x[1] = -2 / (hx*hx) * psi[j][1];
+            beta_x[1] = -2 / (hx*hx) * psi[k][j][1];
 
             for (int i = 1; i < N-1; i++)
             {
-                float A = coef_x * (nu/hx + u[j][i]/2);
-                float B = coef_x * (nu/hx - u[j][i]/2);
-                float C = 1 + tau * nu / (hx * hx);
-                float F = omega[k][j][i] - tau*v[j][i]/(4*hy)*(omega[k][j+1][i] - omega[k][j-1][i]) + \
-                            tau*nu/(2*hy*hy)*(omega[k][j+1][i] - 2*omega[k][j][i] + omega[k][j-1][i]) + \
-                            tau*rigth_beta/(4*hx*hx)*(temperature[k][j][i+1] - temperature[k][j][i-1]);
+                double A = coef_x * (cfparams.nu/hx + u[j][i]/2);
+                double B = coef_x * (cfparams.nu/hx - u[j][i]/2);
+                double C = 1 + tau * cfparams.nu / (hx * hx);
+                double F = omega[k][j][i] - tau*v[j][i]/(4*hy)*(omega[k][j+1][i] - omega[k][j-1][i]) + \
+                            tau*cfparams.nu/(2*hy*hy)*(omega[k][j+1][i] - 2*omega[k][j][i] + omega[k][j-1][i]) + \
+                            tau*cfparams.rigth_beta/(4*hx*hx)*(temperature[k][j][i+1] - temperature[k][j][i-1]);
 
                 alpha_x[i+1] = B / (C - A * alpha_x[i]);
                 beta_x[i+1] = (A * beta_x[i] + F) / (C - A * alpha_x[i]);
             }
 
-            omega12[k][j][N-1] = -2 / (hx*hx) * psi[j][N-2];
+            omega12[k][j][N-1] = -2 / (hx*hx) * psi[k][j][N-2];
             for (int i = N-2; i >= 0; i--)
+            {
                 omega12[k][j][i] = alpha_x[i+1] * omega12[k][j][i+1] + beta_x[i+1];
+            }
+            
         }
-
         /*
          * Run back-for by Y for over X on n+1 layer
          */
@@ -207,44 +200,79 @@ void calculations() {
             // alpha - a second-order condition.
             // beta - a first-order condition.
             alpha_y[1] = 0;
-            beta_y[1] = -2 / (hy*hy) * psi[1][i];
+            beta_y[1] = -2 / (hy*hy) * psi[k][1][i];
 
             for (int j = 1; j < M-1; j++)
             {
-                float A = coef_y * (nu/hy - v[j][i]/2);
-                float B = coef_y * (nu/hy + v[j][i]/2);
-                float C = 1 + tau * nu / (hy * hy);
-                float F = omega12[k][j][i] - tau*u[j][i]/(4*hx)*(omega12[k][j][i+1] - omega12[k][j][i-1]) + \
-                            tau*nu/(2*hx*hx)*(omega12[k][j][i+1] - 2*omega12[k][j][i] + omega12[k][j][i-1]) + \
-                            tau*rigth_beta/(4*hx*hx)*(temperature[k][j][i+1] - temperature[k][j][i-1]);
+                double A = coef_y * (cfparams.nu/hy - v[j][i]/2);
+                double B = coef_y * (cfparams.nu/hy + v[j][i]/2);
+                double C = 1 + tau * cfparams.nu / (hy * hy);
+                double F = omega12[k][j][i] - tau*u[j][i]/(4*hx)*(omega12[k][j][i+1] - omega12[k][j][i-1]) + \
+                            tau*cfparams.nu/(2*hx*hx)*(omega12[k][j][i+1] - 2*omega12[k][j][i] + omega12[k][j][i-1]) + \
+                            tau*cfparams.rigth_beta/(4*hx*hx)*(temperature12[k][j][i+1] - temperature12[k][j][i-1]);
 
                 alpha_y[j+1] = B / (C - A * alpha_y[j]);
                 beta_y[j+1] = (A * beta_y[j] + F) / (C - A * alpha_y[j]);
             }
 
-            omega[k+1][M-1][i] = -2 / (hy*hy) * psi[M-2][i];
+            omega[k+1][M-1][i] = -2 / (hy*hy) * psi[k][M-2][i];
             for (int j = M-2; j >= 0; j--)
             {
                 omega[k+1][j][i] = alpha_y[j+1] * omega[k+1][j+1][i] + beta_y[j+1];
-                omega[k+1][j][N-1] = -2 / (hy*hy) * psi[j][N-2];
-                omega[k+1][j][0] = -2 / (hy*hy) * psi[j][1];
+                omega[k+1][j][N-1] = -2 / (hy*hy) * psi[k][j][N-2];
+                omega[k+1][j][0] = -2 / (hy*hy) * psi[k][j][1];
             }
         }
 
         /*
-         * Calculations of PSI with star-scheme
+         * Calculations of PSI
          */
-        float psi_coef = (hx*hx*hy*hy/(2*hx*hx + 2*hy*hy));
         for (int j = 1; j < M-1; j++)
         {
+	        alpha_x[1] = 1;
+	        beta_x[1] = 0;
+            
             for (int i = 1; i < N-1; i++)
             {
-                psi[j][i] = psi_coef * (
-                                (psi[j][i+1] + psi[j][i-1])/(hx*hx) + \
-                                (psi[j+1][i] + psi[j-1][i])/(hy*hy) + \
-                                omega[k][j][i]);
+                double A = tau * cfparams.lambda/(2*hx*hx);
+                double B = tau * cfparams.lambda/(2*hx*hx);
+		        double C = 1 + A + B;
+		        double F = psi[k][j][i] + tau*cfparams.lambda/(2*hy*hy)*(psi[k][j+1][i] - 2*psi[k][j][i] + psi[k][j-1][i]) + tau*cfparams.lambda/2 * omega[k][j][i];
+
+		        alpha_x[i+1] = B / (C - alpha_x[i] * A);
+		        beta_x[i+1] = (F + A * beta_x[i]) / (C - alpha_x[i] * A);
+            }
+
+            psi12[k][j][N-1] = beta_x[N-1]/(1-alpha_x[N-1]);
+            for (int i = N-2; i >= 0; i--)
+            {
+                psi12[k][j][i] = alpha_x[i+1] * psi12[k][j][i+1] + beta_x[i+1];
             }
         }
+
+	    for (int i=1; i < N-1; i++)
+	    {
+	        alpha_y[1] = 1;
+	        beta_y[1] = 0;
+
+            for (int j = 1; j < M-1; j++)
+            {
+                double A = tau * cfparams.lambda/(2*hy*hy);
+                double B = tau * cfparams.lambda/(2*hy*hy);
+	    	    double C = 1 + A + B;
+	    	    double F = psi12[k][j][i] + tau*cfparams.lambda/(2*hx*hx)*(psi12[k][j][i+1] - 2*psi12[k][j][i] + psi12[k][j][i-1]) + tau*cfparams.lambda/2 * omega[k][j][i];
+
+	    	    alpha_y[j+1] = B / (C - alpha_y[j] * A);
+	    	    beta_y[j+1] = (F + A * beta_y[j]) / (C - alpha_y[j] * A);
+            }
+
+            psi[k+1][M-1][i] = beta_y[M-1]/(1-alpha_y[M-1]);
+            for (int j = M-2; j >= 0; j--)
+            {
+                psi[k+1][j][i] = alpha_y[j+1] * psi[k+1][j+1][i] + beta_y[j+1];
+            }
+	    }
+
 
         /*
          * Calculations of velocities
@@ -253,14 +281,15 @@ void calculations() {
         {
             for (int i = 1; i < N-1; i++)
             {
-                u[j][i] = (psi[j+1][i] - psi[j-1][i]) / (2 * hy);
-                v[j][i] = -(psi[j][i+1] - psi[j][i-1]) / (2 * hx);
+                u[j][i] = (psi[k][j+1][i] - psi[k][j-1][i]) / (2 * hy);
+                v[j][i] = -(psi[k][j][i+1] - psi[k][j][i-1]) / (2 * hx);
             }
         }
     }
 }
 
-void helper(const char *progname) {
+void helper(const char *progname)
+{
     printf("%s starts a calculations convective flow of fluid in 2D case.\n\n", progname);
     printf("Usage:\n");
     printf("    %s [OPTION]...      \n", progname);
@@ -279,23 +308,102 @@ void helper(const char *progname) {
     printf("    -?, --help          \n");
 }
 
-void free_arrays(){
+void free_arrays()
+{
     printf("\nFREEE ALL ALLOCATED MEMORY\n");
-    free_vector(x);
-    free_vector(y);
+    free_vector(grid.x1);
+    free_vector(grid.x2);
     free_vector(t);
     free_matrix3d(temperature);
     free_matrix3d(temperature12);
     free_matrix3d(omega);
     free_matrix3d(omega12);
-    free_matrix(psi);
+    free_matrix3d(psi);
+    free_matrix3d(psi12);
     free_matrix(u);
     free_matrix(v);
     free_vector(alpha_x);
     free_vector(beta_x);
     free_vector(alpha_y);
     free_vector(beta_y);
+}
+
+void save_data()
+{
+    printf("SAVE DATA\n");
+    FILE* temperature_file = fopen("./output_data/temperature.txt", "w");
+    FILE* omega_file = fopen("./output_data/omega.txt", "w");
+    FILE* psi_file = fopen("./output_data/psi.txt", "w");
+    FILE* velocity_u = fopen("./output_data/u_vel.txt", "w");
+    FILE* velocity_v = fopen("./output_data/v_vel.txt", "w");
+    if (temperature == NULL || omega_file == NULL || psi_file == NULL)
+        return;
+
+    for (int j = 0; j < M; j++)
+    {
+        for (int i = 0; i < N; i++)
+        {
+            fprintf(temperature_file, "%.4f ", temperature[K-1][j][i]);
+            fprintf(omega_file, "%.4f ", omega[K-1][j][i]);
+            fprintf(psi_file, "%.4f ", psi[K-1][j][i]);
+            fprintf(velocity_u, "%.4f ", u[j][i]);
+            fprintf(velocity_v, "%.4f ", v[j][i]);
+        }
+        fprintf(temperature_file, "%c", '\n');
+        fprintf(omega_file, "%c", '\n');
+        fprintf(psi_file, "%c", '\n');
+        fprintf(velocity_u, "%c", '\n');
+        fprintf(velocity_v, "%c", '\n');
+    }
+
+    fclose(temperature_file);
+    fclose(omega_file);
+    fclose(psi_file);
+    fclose(velocity_u);
+    fclose(velocity_v);
+    printf("\tSuccessful!\n");
+
+    printf("SAVE TIME DATA\n");
+    FILE* temperature_time_data = fopen("./output_data/temperature_time_data.txt", "w");
+    if (temperature_time_data == NULL)
+        return;
     
+    for (int k = 0; k < K; k+=10)
+    {
+        for (int j = 0; j < M; j++)
+        {
+            for (int i = 0; i < N; i++)
+            {
+                fprintf(temperature_time_data, "%.4f ", temperature[k][j][i]);
+            }
+        }
+        fprintf(temperature_time_data, "%c", '\n');
+    }
+    fclose(temperature_time_data);
+}
+
+double getMaxAbs(Matrix3D p)
+{
+    Matrix subtr = init_zero_matrix(N, M);
+
+    double max = 0.0;
+    double maxitem = 0.0;
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < M; j++)
+        {
+            subtr[j][i] = fabs(p[K-1][j][i] - p[K-2][j][i]);
+            if (max <= subtr[j][i])
+                max = subtr[j][i];
+
+	    if (maxitem <= fabs(p[K-1][j][i]))
+	        maxitem = p[K-1][j][i];
+        }
+    }
+
+    printf("MAX PSI ITEM: %f\n", maxitem);
+    
+    return max;
 }
 
 int main(int argc, char *argv[]) {
@@ -315,10 +423,8 @@ int main(int argc, char *argv[]) {
         {"time-points", required_argument, NULL, 'T'},
         {"x_1", required_argument, NULL, 'x'},
         {"x-points", required_argument, NULL, 'X'},
-        {"x-scale", required_argument, NULL, 1},
         {"y_1", required_argument, NULL, 'y'},
         {"y-points", required_argument, NULL, 'Y'},
-        {"y-scale", required_argument, NULL, 2},
         {NULL, 0, NULL, 0}
 	};
     int c;
@@ -328,14 +434,6 @@ int main(int argc, char *argv[]) {
     {
         switch (c)
         {
-            case 1:
-                x_scale = atof(optarg);
-                NUMCHECK(x_scale)
-                break;
-            case 2:
-                y_scale = atof(optarg);
-                NUMCHECK(y_scale)
-                break;
             case 'X':
                 N = atoi(optarg);
                 if (N < 10)
@@ -361,28 +459,28 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 'x':
-                x_1 = atof(optarg);
-                NUMCHECK(x_1)
+                grid.x1_r = atof(optarg);
+                NUMCHECK(grid.x1_r);
                 break;
             case 'y':
-                y_1 = atof(optarg);
-                NUMCHECK(y_1)
+                grid.x2_r = atof(optarg);
+                NUMCHECK(grid.x2_r);
                 break;
             case 't':
                 t_1 = atof(optarg);
-                NUMCHECK(t_1)
+                NUMCHECK(t_1);
                 break;
             case 'R':
-                Re = atof(optarg);
-                NUMCHECK(Re)
+                cfparams.Re = atof(optarg);
+                NUMCHECK(cfparams.Re);
                 break;
             case 'G':
-                Gr = atof(optarg);
-                NUMCHECK(Gr)
+                cfparams.Gr = atof(optarg);
+                NUMCHECK(cfparams.Gr);
                 break;
             case 'P':
-                Pr = atof(optarg);
-                NUMCHECK(Pr)
+                cfparams.Pr = atof(optarg);
+                NUMCHECK(cfparams.Pr);
                 break;
             case '?':
                 helper(argv[0]);
@@ -394,28 +492,37 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    hx = x_1 / N;
-    hy = y_1 / M;
-    tau = t_1 / K;
-    xi = 1.0 / (Re * Pr);
-    nu = 1.0 / Re;
-    rigth_beta = Gr / (Re * Re);
+    K = K * t_1 + 1;
+    grid.x1_size = N * x_1 + 1;
+    grid.x2_size = M * y_1 + 1;
 
-    x = init_zero_vector(N+1);
-    y = init_zero_vector(M+1);
+    tau = t_1 / (K-1);
+    grid.hx1 = x_1 / (grid.x1_size-1);
+    grid.hx2 = y_1 / (grid.x2_size-1);
+    hx = grid.hx1;
+    hy = grid.hx2;
+
+    cfparams.xi = 1.0 / (cfparams.Re * cfparams.Pr);
+    cfparams.nu = 1.0 / cfparams.Re;
+    cfparams.rigth_beta = cfparams.Gr / (cfparams.Re * cfparams.Re);
+    cfparams.lambda = 0.5;
+
     t = init_zero_vector(K);
-    temperature = init_zero_matrix3d(N, M, K);
-    temperature12 = init_zero_matrix3d(N, M, K);
-    omega = init_zero_matrix3d(N, M, K);
-    omega12 = init_zero_matrix3d(N, M, K);
-    psi = init_zero_matrix(N, M);
-    u = init_zero_matrix(N, M);
-    v = init_zero_matrix(N, M);
-    alpha_x = init_zero_vector(N);
-    beta_x = init_zero_vector(N);
-    alpha_y = init_zero_vector(M);
-    beta_y = init_zero_vector(M);
-    if ( x == NULL || y == NULL || t == NULL || \
+    grid.x1 = init_zero_vector(grid.x1_size);
+    grid.x2 = init_zero_vector(grid.x2_size);
+    alpha_x = init_zero_vector(grid.x1_size);
+    alpha_y = init_zero_vector(grid.x2_size);
+    beta_x = init_zero_vector(grid.x1_size);
+    beta_y = init_zero_vector(grid.x2_size);
+    u = init_zero_matrix(grid.x1_size, grid.x2_size);
+    v = init_zero_matrix(grid.x1_size, grid.x2_size);
+    psi = init_zero_matrix3d(grid.x1_size, grid.x2_size, K);
+    psi12 = init_zero_matrix3d(grid.x1_size, grid.x2_size, K);
+    omega = init_zero_matrix3d(grid.x1_size, grid.x2_size, K);
+    omega12 = init_zero_matrix3d(grid.x1_size, grid.x2_size, K);
+    temperature = init_zero_matrix3d(grid.x1_size, grid.x2_size, K);
+    temperature12 = init_zero_matrix3d(grid.x1_size, grid.x2_size, K);
+    if ( grid.x1 == NULL || grid.x2 == NULL || t == NULL || \
          temperature == NULL || temperature12 == NULL || \
         omega == NULL || omega12 == NULL || psi == NULL || \
         u == NULL || v == NULL || alpha_x == NULL || beta_y == NULL )
@@ -425,23 +532,23 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    for (int i = 0; i < N+1; i++)
-        x[i] = i*hx;
+    for (int i = 0; i < grid.x1_size; i++)
+        grid.x1[i] = i*hx;
 
-    for (int j = 0; j < M+1; j++)
-        y[j] = j*hy;
+    for (int j = 0; j < grid.x2_size; j++)
+        grid.x2[j] = j*hy;
 
     for (int k = 0; k < K; k++)
         t[k] = k*tau;
 
-    for (int j = 0; j < M; j++)
-    {
-        for (int i = 0; i < N; i++)
-        {
-            temperature[0][j][i] = exp(-190*(x[i])) + T0;
-            temperature12[0][j][i] = exp(-190*(x[i])) + T0;
-        }
-    }
+    // for (int j = 0; j < M; j++)
+    // {
+    //     for (int i = 0; i < N; i++)
+    //     {
+    //         temperature[0][j][i] = exp(-190*(x[i])) + T0;
+    //         temperature12[0][j][i] = exp(-190*(x[i])) + T0;
+    //     }
+    // }
 
     init_boundary_conditions(temperature, 'l', 0, 1, T0);
     init_boundary_conditions(temperature, 'r', 0, 1, T1);
@@ -450,51 +557,12 @@ int main(int argc, char *argv[]) {
 
     printf("RUN CALCULATIONS\n");
     calculations();
+    print_matrix(psi[5]);
     printf("\tSuccessful!\n");
     
-    printf("SAVE DATA\n");
-    FILE* temp = fopen("./output_data/Temp.txt", "w");
-    FILE* Omg = fopen("./output_data/Omg.txt", "w");
-    FILE* Psi = fopen("./output_data/Psi.txt", "w");
-    if (temp == NULL || Omg == NULL || Psi == NULL)
-        return -1;
-
-    for (int j = 0; j < M; j++)
-    {
-        for (int i = 0; i < N; i++)
-        {
-            fprintf(temp, "%.4f ", temperature[K-1][j][i]);
-            fprintf(Omg, "%.4f ", omega[K-1][j][i]);
-            fprintf(Psi, "%.4f ", psi[j][i]);
-        }
-        fprintf(temp, "%c", '\n');
-        fprintf(Omg, "%c", '\n');
-        fprintf(Psi, "%c", '\n');
-    }
-
-    fclose(temp);
-    fclose(Omg);
-    fclose(Psi);
-    printf("\tSuccessful!\n");
-
-    printf("SAVE TIME DATA\n");
-    FILE* temp_all = fopen("./output_data/temp_all.txt", "w");
-    if (temp_all == NULL)
-        return -1;
+    save_data();
     
-    for (int k = 0; k < K; k+=10)
-    {
-        for (int j = 0; j < M; j++)
-        {
-            for (int i = 0; i < N; i++)
-            {
-                fprintf(temp_all, "%.4f ", temperature[k][j][i]);
-            }
-        }
-        fprintf(temp_all, "%c", '\n');
-    }
-
-    fclose(temp_all);
+    printf("%f\n", getMaxAbs(psi));
     printf("\tSuccessful!\n");
     free_arrays();
     printf("\tSuccessful!\n");

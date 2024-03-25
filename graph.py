@@ -37,9 +37,9 @@ else:
 
 datadir = './output_data'
 
-temp = f"{datadir}/Temp.txt"
-Omg = f"{datadir}/Omg.txt"
-Psi = f"{datadir}/Psi.txt"
+temp = f"{datadir}/temperature.txt"
+Omg = f"{datadir}/omega.txt"
+Psi = f"{datadir}/psi.txt"
 temp_data = []
 Omg_data = []
 Psi_data = []
@@ -52,7 +52,7 @@ with open(temp, 'r') as temp_file, open(Omg, 'r') as Omg_file, open(Psi, 'r') as
     for line in Psi_file:
         Psi_data.append(list(map(float, line.rstrip().split(' '))))
 
-example_temp = f"{datadir}/temp_all.txt"
+example_temp = f"{datadir}/temperature_time_data.txt"
 example_data = []
 with open(example_temp, 'r') as example:
     for line in example:
