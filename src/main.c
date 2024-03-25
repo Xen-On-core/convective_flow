@@ -297,12 +297,12 @@ void helper(const char *progname)
     printf("    -G, --grashof       Reynolds number\n");
     printf("    -P, --prandtl       Prandtl number\n");
     printf("    -R, --reynolds      Grashof number\n");
-    printf("    -T, --time-points   number of nodes by X\n");
+    printf("    -T, --time-points   number of nodes by time\n");
     printf("    -t, --t1            \n");
     printf("    -x, --x1            \n");
-    printf("    -X, --x-points      number of nodes by Y\n");
+    printf("    -X, --x-points      number of nodes by X\n");
     printf("    -y, --y1            \n");
-    printf("    -Y, --y-points      number of nodes by time\n");
+    printf("    -Y, --y-points      number of nodes by Y\n");
     printf("        --x-scale       \n");
     printf("        --y-scale       \n");
     printf("    -?, --help          \n");
