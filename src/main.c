@@ -380,17 +380,14 @@ void inititalize_convective_flow_environment()
 
 int main(int argc, char *argv[])
 {
-    double x_0 = 0.0;
-    double y_0 = 0.0;
     double x_1 = 1.0;
     double y_1 = 1.0;
     double t_1 = 1.0;
-    double hx;
-    double hy;
 
-    if (argc < 1)
+    if (argc <= 1)
     {
-        printf("No arguments are given!");
+        printf("No arguments are given!\n\n");
+        helper(argv[0]);
         return 0;
     }
 
@@ -471,9 +468,14 @@ int main(int argc, char *argv[])
         }
     }
 
+    double hx;
+    double hy;
+
     K = K * t_1 + 1;
-    grid.x1->size = N * x_1 + 1;
-    grid.x2->size = M * y_1 + 1;
+    N = N * x_1 + 1;
+    M = M * y_1 + 1;
+
+    inititalize_convective_flow_environment();
 
     tau = t_1 / (K - 1);
     grid.hx1 = x_1 / (grid.x1->size - 1);
@@ -513,8 +515,8 @@ int main(int argc, char *argv[])
             temperature12->data[0][j][i] = T0;
         }
 
-        temperature->data[0][j][grid.x1->size] = T1;
-        temperature12->data[0][j][grid.x1->size] = T1;
+        temperature->data[0][j][grid.x1->size-1] = T1;
+        temperature12->data[0][j][grid.x1->size-1] = T1;
     }
 
     printf("RUN CALCULATIONS\n");
