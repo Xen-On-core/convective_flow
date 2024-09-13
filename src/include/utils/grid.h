@@ -6,74 +6,84 @@
 
 typedef struct Grid1D
 {
-    int size;
+    Vector *x1;
+    float x1_l;
+    float x1_r;
     double hx1;
-    Vector x1;
 } Grid1D;
 
 typedef struct Grid2D
 {
-    int x1_size;
-    int x2_size;
-    float x1_r;
-    float x2_r;
+    Vector *x1;
+    Vector *x2;
     float x1_l;
     float x2_l;
+    float x1_r;
+    float x2_r;
     double hx1;
     double hx2;
-    Vector x1;
-    Vector x2;
 } Grid2D;
 
 typedef struct Grid3D
 {
-    int x1_size;
-    int x2_size;
-    int x3_size;
-    float x1_r;
-    float x2_r;
-    float x3_r;
-    float x1_l;
-    float x2_l;
-    float x3_l;
-    double hx1;
-    double hx2;
-    double hx3;
     Vector x1;
     Vector x2;
     Vector x3;
+    float x1_l;
+    float x2_l;
+    float x3_l;
+    float x1_r;
+    float x2_r;
+    float x3_r;
+    double hx1;
+    double hx2;
+    double hx3;
 } Grid3D;
 
 typedef struct PolarGrid
 {
-    int rho_size;
-    int phi_size;
     Vector rho;
     Vector phi;
+    float rho_l;
+    float phi_l;
+    float rho_r;
+    float phi_r;
+    double hrho;
+    double hphi;
 } PolarGrid;
 
 typedef struct CylindricalGrid
 {
-    int rho_size;
-    int phi_size;
-    int z_size;
     Vector rho;
     Vector phi;
     Vector z;
+    float rho_l;
+    float phi_l;
+    float z_l;
+    float rho_r;
+    float phi_r;
+    float z_r;
+    double hrho;
+    double hphi;
+    double hz;
 } CylindricaGrid;
 
 typedef struct SphericalGrid
 {
-    int rho_size;
-    int phi_size;
-    int theta_size;
-    int psi_size;
     Vector rho;
     Vector phi;
     Vector theta;
-    Vector psi;
+    float rho_l;
+    float phi_l;
+    float theta_l;
+    float rho_r;
+    float phi_r;
+    float theta_r;
+    double hrho;
+    double hphi;
+    double htheta;
 } SphericalGrid;
 
-
+void get_grid_info();
 
 #endif /* GRID_H */

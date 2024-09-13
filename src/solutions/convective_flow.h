@@ -34,4 +34,10 @@ typedef struct ConvectiveFlow3D
     Matrix3D w;
 } CFS_3D;
 
+void convective_flow_solution_1d();
+
+void convective_flow_solution_2d();
+
+void convective_flow_solution_3d();
+
 #endif /* SOLUTIONS_H */

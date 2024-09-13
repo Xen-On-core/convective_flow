@@ -26,6 +26,6 @@ fi
 
 if ls ${DATADIR} | grep 'nan' 
 then
-    echo "ERROR: the write NAN data.";
+    echo "ERROR: were written NAN data.";
     exit 2
 fi
