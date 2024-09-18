@@ -57,14 +57,8 @@ Vector *beta_y;
 
 void calculations()
 {
-    /*
-     * Global cycle for time
-     */
     for (int k = 0; k < K - 1; k++)
     {
-        /*
-         * Run back-for by X for over Y on n+1/2 layer
-         */
         double coef_x = tau / (2 * grid.hx1);
         for (int j = 1; j < grid.x1->size - 1; j++)
         {
@@ -92,14 +86,9 @@ void calculations()
             }
         }
 
-        /*
-         * Run back-for by Y for over X on n+1 layer
-         */
         double coef_y = tau / (2 * grid.hx2);
         for (int i = 1; i < grid.x1->size - 1; i++)
         {
-            // alpha - a second-order condition.
-            // beta - a first-order condition.
             alpha_y->data[1] = 1;
             beta_y->data[1] = 0;
 
@@ -128,13 +117,8 @@ void calculations()
             }
         }
 
-        /*
-         * Run back-for by X for over Y on n+1/2 layer
-         */
         for (int j = 1; j < grid.x2->size - 1; j++)
         {
-            // alpha - a second-order condition.
-            // beta - a first-order condition.
             alpha_x->data[1] = 0;
             beta_x->data[1] = -2 / (grid.hx1 * grid.hx1) * psi->data[k][j][1];
 
@@ -160,13 +144,9 @@ void calculations()
                 omega12->data[k][j][i] = alpha_x->data[i + 1] * omega12->data[k][j][i + 1] + beta_x->data[i + 1];
             }
         }
-        /*
-         * Run back-for by Y for over X on n+1 layer
-         */
+
         for (int i = 1; i < grid.x1->size - 1; i++)
         {
-            // alpha - a second-order condition.
-            // beta - a first-order condition.
             alpha_y->data[1] = 0;
             beta_y->data[1] = -2 / (grid.hx2 * grid.hx2) * psi->data[k][1][i];
 
@@ -195,9 +175,6 @@ void calculations()
             }
         }
 
-        /*
-         * Calculations of PSI
-         */
         for (int j = 1; j < grid.x2->size - 1; j++)
         {
             alpha_x->data[1] = 0;
@@ -248,9 +225,6 @@ void calculations()
             }
         }
 
-        /*
-         * Calculations of velocities
-         */
         for (int j = 1; j < grid.x2->size-1; j++)
         {
             for (int i = 1; i < grid.x1->size-1; i++)
