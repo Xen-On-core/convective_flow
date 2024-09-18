@@ -26,9 +26,9 @@ typedef struct Grid2D
 
 typedef struct Grid3D
 {
-    Vector x1;
-    Vector x2;
-    Vector x3;
+    Vector *x1;
+    Vector *x2;
+    Vector *x3;
     float x1_l;
     float x2_l;
     float x3_l;
