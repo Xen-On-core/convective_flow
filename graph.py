@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib
-from matplotlib.animation import FuncAnimation
 import time
 
 from PIL import Image
@@ -127,6 +126,7 @@ else:
     plt.savefig(f'./images/{save_files_name}_contour.png', dpi=300)
 plt.close()
 
+fig = plt.figure(figsize=(8,8))
 ax = fig.add_subplot(projection = '3d')
 ax.set_xlabel("$x$")
 ax.set_ylabel("$y$")
@@ -134,19 +134,6 @@ ax.set(title="$T, time = 0.0$")
 ax.view_init(elev=90, azim=-90, roll=0)
 
 frames_num = len(example_data)
-
-# def update(i):
-#     start_time = time.time()
-#     if i+1 % 100 == 0:
-#         print(f"=== IMAGE ITERATION {i+1} ===")
-#         print("--- %s seconds ---" % (time.time() - start_time))
-#     plt.gca().cla()
-#     ax.set(title=f"$T$, time = {i / frames_num}")
-#     ax.plot_surface(TX, TY, Z_example[i], cmap=cm.hot)
-
-# anim = FuncAnimation(fig, update, frames = frames_num, interval=10)
-# anim.save(f'./anim/{save_files_name}.gif')
-exit(0)
 
 if realtime:
     # This code need for show real-time animation

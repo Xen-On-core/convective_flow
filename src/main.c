@@ -8,13 +8,17 @@
 #include "utils/grid.h"
 #include "utils/utils.h"
 
+FILE* logfile;
+
 double epsilon = 1e-6;
-#define NUMCHECK(number)                                    \
-    if (abs(number) < epsilon)                              \
-    {                                                       \
-        printf("Wrong value of %s: %f\n", #number, number); \
-        exit(1);                                            \
+#define NUMCHECK(number)                                              \
+    if (abs(number) < epsilon)                                        \
+    {                                                                 \
+        fprintf(logfile, "Wrong value of %s: %f\n", #number, number); \
+        exit(1);                                                      \
     }
+
+int alloc_error = 0;
 
 /*
  * We define the following variables describing the grid for calculations:
@@ -72,8 +76,10 @@ void calculations()
                 double A = coef_x * (cfparams.xi / grid.hx1 + u->data[j][i] / 2);
                 double B = coef_x * (cfparams.xi / grid.hx1 - u->data[j][i] / 2);
                 double C = 1 + tau * cfparams.xi / (grid.hx1 * grid.hx1);
-                double F = temperature->data[k][j][i] - tau * v->data[j][i] / (4 * grid.hx2) * (temperature->data[k][j + 1][i] - temperature->data[k][j - 1][i]) +
-                           tau * cfparams.xi / (2 * grid.hx2 * grid.hx2) * (temperature->data[k][j + 1][i] - 2 * temperature->data[k][j][i] + temperature->data[k][j - 1][i]);
+                double F = temperature->data[k][j][i] - tau * v->data[j][i] / (4 * grid.hx2) * 
+                            (temperature->data[k][j + 1][i] - temperature->data[k][j - 1][i]) + 
+                            tau * cfparams.xi / (2 * grid.hx2 * grid.hx2) * 
+                            (temperature->data[k][j + 1][i] - 2 * temperature->data[k][j][i] + temperature->data[k][j - 1][i]);
 
                 alpha_x->data[i + 1] = B / (C - A * alpha_x->data[i]);
                 beta_x->data[i + 1] = (A * beta_x->data[i] + F) / (C - A * alpha_x->data[i]);
@@ -102,14 +108,18 @@ void calculations()
                 double A = coef_y * (cfparams.xi / grid.hx2 + v->data[j][i] / 2);
                 double B = coef_y * (cfparams.xi / grid.hx2 - v->data[j][i] / 2);
                 double C = 1 + tau * cfparams.xi / (grid.hx2 * grid.hx2);
-                double F = temperature12->data[k][j][i] - tau * u->data[j][i] / (4 * grid.hx1) * (temperature12->data[k][j][i + 1] - temperature12->data[k][j][i - 1]) +
-                           tau * cfparams.xi / (2 * grid.hx1 * grid.hx1) * (temperature12->data[k][j][i + 1] - 2 * temperature12->data[k][j][i] + temperature12->data[k][j][i - 1]);
+                double F = temperature12->data[k][j][i] - tau * u->data[j][i] / (4 * grid.hx1) * 
+                            (temperature12->data[k][j][i + 1] - temperature12->data[k][j][i - 1]) + 
+                            tau * cfparams.xi / (2 * grid.hx1 * grid.hx1) * 
+                            (temperature12->data[k][j][i + 1] - 2 * temperature12->data[k][j][i] + temperature12->data[k][j][i - 1]);
 
                 alpha_y->data[j + 1] = B / (C - A * alpha_y->data[j]);
                 beta_y->data[j + 1] = (A * beta_y->data[j] + F) / (C - A * alpha_y->data[j]);
             }
 
             temperature->data[k + 1][grid.x2->size - 1][i] = beta_y->data[grid.x2->size - 1] / (1 - alpha_y->data[grid.x2->size - 1]);
+            temperature->data[k + 1][grid.x2->size - 1][0] = T0;
+            temperature->data[k + 1][grid.x2->size - 1][grid.x1->size - 1] = T1;
             for (int j = grid.x2->size - 2; j >= 0; j--)
             {
                 temperature->data[k + 1][j][i] = alpha_y->data[j + 1] * temperature->data[k + 1][j + 1][i] + beta_y->data[j + 1];
@@ -133,9 +143,12 @@ void calculations()
                 double A = coef_x * (cfparams.nu / grid.hx1 + u->data[j][i] / 2);
                 double B = coef_x * (cfparams.nu / grid.hx1 - u->data[j][i] / 2);
                 double C = 1 + tau * cfparams.nu / (grid.hx1 * grid.hx1);
-                double F = omega->data[k][j][i] - tau * v->data[j][i] / (4 * grid.hx2) * (omega->data[k][j + 1][i] - omega->data[k][j - 1][i]) +
-                           tau * cfparams.nu / (2 * grid.hx2 * grid.hx2) * (omega->data[k][j + 1][i] - 2 * omega->data[k][j][i] + omega->data[k][j - 1][i]) +
-                           tau * cfparams.rigth_beta / (4 * grid.hx1 * grid.hx1) * (temperature->data[k][j][i + 1] - temperature->data[k][j][i - 1]);
+                double F = omega->data[k][j][i] - tau * v->data[j][i] / (4 * grid.hx2) * 
+                            (omega->data[k][j + 1][i] - omega->data[k][j - 1][i]) + 
+                            tau * cfparams.nu / (2 * grid.hx2 * grid.hx2) * 
+                            (omega->data[k][j + 1][i] - 2 * omega->data[k][j][i] + omega->data[k][j - 1][i]) + 
+                            tau * cfparams.rigth_beta / (4 * grid.hx1 * grid.hx1) * 
+                            (temperature->data[k][j][i + 1] - temperature->data[k][j][i - 1]);
 
                 alpha_x->data[i + 1] = B / (C - A * alpha_x->data[i]);
                 beta_x->data[i + 1] = (A * beta_x->data[i] + F) / (C - A * alpha_x->data[i]);
@@ -162,9 +175,12 @@ void calculations()
                 double A = coef_y * (cfparams.nu / grid.hx2 - v->data[j][i] / 2);
                 double B = coef_y * (cfparams.nu / grid.hx2 + v->data[j][i] / 2);
                 double C = 1 + tau * cfparams.nu / (grid.hx2 * grid.hx2);
-                double F = omega12->data[k][j][i] - tau * u->data[j][i] / (4 * grid.hx1) * (omega12->data[k][j][i + 1] - omega12->data[k][j][i - 1]) +
-                           tau * cfparams.nu / (2 * grid.hx1 * grid.hx1) * (omega12->data[k][j][i + 1] - 2 * omega12->data[k][j][i] + omega12->data[k][j][i - 1]) +
-                           tau * cfparams.rigth_beta / (4 * grid.hx1 * grid.hx1) * (temperature12->data[k][j][i + 1] - temperature12->data[k][j][i - 1]);
+                double F = omega12->data[k][j][i] - tau * u->data[j][i] / (4 * grid.hx1) * 
+                            (omega12->data[k][j][i + 1] - omega12->data[k][j][i - 1]) + 
+                            tau * cfparams.nu / (2 * grid.hx1 * grid.hx1) * 
+                            (omega12->data[k][j][i + 1] - 2 * omega12->data[k][j][i] + omega12->data[k][j][i - 1]) + 
+                            tau * cfparams.rigth_beta / (4 * grid.hx1 * grid.hx1) * 
+                            (temperature12->data[k][j][i + 1] - temperature12->data[k][j][i - 1]);
 
                 alpha_y->data[j + 1] = B / (C - A * alpha_y->data[j]);
                 beta_y->data[j + 1] = (A * beta_y->data[j] + F) / (C - A * alpha_y->data[j]);
@@ -184,7 +200,7 @@ void calculations()
          */
         for (int j = 1; j < grid.x2->size - 1; j++)
         {
-            alpha_x->data[1] = 1;
+            alpha_x->data[1] = 0;
             beta_x->data[1] = 0;
 
             for (int i = 1; i < grid.x1->size - 1; i++)
@@ -193,13 +209,14 @@ void calculations()
                 double B = tau * cfparams.lambda / (2 * grid.hx1 * grid.hx1);
                 double C = 1 + A + B;
                 double F = psi->data[k][j][i] + tau * cfparams.lambda / (2 * grid.hx2 * grid.hx2) * 
-                            (psi->data[k][j + 1][i] - 2 * psi->data[k][j][i] + psi->data[k][j - 1][i]) + tau * cfparams.lambda / 2 * omega->data[k][j][i];
+                            (psi->data[k][j + 1][i] - 2 * psi->data[k][j][i] + psi->data[k][j - 1][i]) + 
+                            tau * cfparams.lambda / 2 * omega->data[k][j][i];
 
                 alpha_x->data[i + 1] = B / (C - alpha_x->data[i] * A);
                 beta_x->data[i + 1] = (F + A * beta_x->data[i]) / (C - alpha_x->data[i] * A);
             }
 
-            psi12->data[k][j][grid.x1->size - 1] = beta_x->data[grid.x1->size - 1] / (1 - alpha_x->data[grid.x1->size - 1]);
+            psi12->data[k][j][grid.x1->size - 1] = 0; // beta_x->data[grid.x1->size - 1] / (1 - alpha_x->data[grid.x1->size - 1]);
             for (int i = grid.x1->size - 2; i >= 0; i--)
             {
                 psi12->data[k][j][i] = alpha_x->data[i + 1] * psi12->data[k][j][i + 1] + beta_x->data[i + 1];
@@ -208,7 +225,7 @@ void calculations()
 
         for (int i = 1; i < grid.x1->size - 1; i++)
         {
-            alpha_y->data[1] = 1;
+            alpha_y->data[1] = 0;
             beta_y->data[1] = 0;
 
             for (int j = 1; j < grid.x2->size - 1; j++)
@@ -217,13 +234,14 @@ void calculations()
                 double B = tau * cfparams.lambda / (2 * grid.hx2 * grid.hx2);
                 double C = 1 + A + B;
                 double F = psi12->data[k][j][i] + tau * cfparams.lambda / (2 * grid.hx1 * grid.hx1) * 
-                            (psi12->data[k][j][i + 1] - 2 * psi12->data[k][j][i] + psi12->data[k][j][i - 1]) + tau * cfparams.lambda / 2 * omega->data[k][j][i];
+                            (psi12->data[k][j][i + 1] - 2 * psi12->data[k][j][i] + psi12->data[k][j][i - 1]) + 
+                            tau * cfparams.lambda / 2 * omega->data[k][j][i];
 
                 alpha_y->data[j + 1] = B / (C - alpha_y->data[j] * A);
                 beta_y->data[j + 1] = (F + A * beta_y->data[j]) / (C - alpha_y->data[j] * A);
             }
 
-            psi->data[k + 1][grid.x2->size - 1][i] = beta_y->data[grid.x2->size - 1] / (1 - alpha_y->data[grid.x2->size - 1]);
+            psi->data[k + 1][grid.x2->size - 1][i] = 0; // beta_y->data[grid.x2->size - 1] / (1 - alpha_y->data[grid.x2->size - 1]);
             for (int j = grid.x2->size - 2; j >= 0; j--)
             {
                 psi->data[k + 1][j][i] = alpha_y->data[j + 1] * psi->data[k + 1][j + 1][i] + beta_y->data[j + 1];
@@ -233,9 +251,9 @@ void calculations()
         /*
          * Calculations of velocities
          */
-        for (int j = 1; j < grid.x2->size - 1; j++)
+        for (int j = 1; j < grid.x2->size-1; j++)
         {
-            for (int i = 1; i < grid.x1->size - 1; i++)
+            for (int i = 1; i < grid.x1->size-1; i++)
             {
                 u->data[j][i] = (psi->data[k][j + 1][i] - psi->data[k][j - 1][i]) / (2 * grid.hx2);
                 v->data[j][i] = -(psi->data[k][j][i + 1] - psi->data[k][j][i - 1]) / (2 * grid.hx1);
@@ -246,27 +264,27 @@ void calculations()
 
 void helper(const char *progname)
 {
-    printf("%s starts a calculations convective flow of fluid in 2D case.\n\n", progname);
-    printf("Usage:\n");
-    printf("    %s [OPTION]...      \n", progname);
-    printf("\nOptions:\n");
-    printf("    -G, --grashof       Reynolds number\n");
-    printf("    -P, --prandtl       Prandtl number\n");
-    printf("    -R, --reynolds      Grashof number\n");
-    printf("    -T, --time-points   number of nodes by time\n");
-    printf("    -t, --t1            \n");
-    printf("    -x, --x1            \n");
-    printf("    -X, --x-points      number of nodes by X\n");
-    printf("    -y, --y1            \n");
-    printf("    -Y, --y-points      number of nodes by Y\n");
-    printf("        --x-scale       \n");
-    printf("        --y-scale       \n");
-    printf("    -?, --help          \n");
+    fprintf(stdout, "%s starts a calculations convective flow of fluid in 2D case.\n\n", progname);
+    fprintf(stdout, "Usage:\n");
+    fprintf(stdout, "    %s [OPTION]...      \n", progname);
+    fprintf(stdout, "\nOptions:\n");
+    fprintf(stdout, "    -G, --grashof       Reynolds number\n");
+    fprintf(stdout, "    -P, --prandtl       Prandtl number\n");
+    fprintf(stdout, "    -R, --reynolds      Grashof number\n");
+    fprintf(stdout, "    -T, --time-points   number of nodes by time\n");
+    fprintf(stdout, "    -t, --t1            \n");
+    fprintf(stdout, "    -x, --x1            \n");
+    fprintf(stdout, "    -X, --x-points      number of nodes by X\n");
+    fprintf(stdout, "    -y, --y1            \n");
+    fprintf(stdout, "    -Y, --y-points      number of nodes by Y\n");
+    fprintf(stdout, "        --x-scale       \n");
+    fprintf(stdout, "        --y-scale       \n");
+    fprintf(stdout, "    -?, --help          \n");
 }
 
 void convective_flow_data_free()
 {
-    printf("\nFREEE ALL ALLOCATED MEMORY\n");
+    fprintf(logfile, "\nFREEE ALL ALLOCATED MEMORY\n");
     free_matrix3d(temperature);
     free_matrix3d(temperature12);
     free_matrix3d(omega);
@@ -286,7 +304,7 @@ void convective_flow_data_free()
 
 void save_data()
 {
-    printf("SAVE DATA\n");
+    fprintf(logfile, "SAVE DATA\n");
     FILE *temperature_file = fopen("./output_data/temperature.txt", "w");
     FILE *omega_file = fopen("./output_data/omega.txt", "w");
     FILE *psi_file = fopen("./output_data/psi.txt", "w");
@@ -317,9 +335,9 @@ void save_data()
     fclose(psi_file);
     fclose(velocity_u);
     fclose(velocity_v);
-    printf("\tSuccessful!\n");
+    fprintf(logfile, "\tSuccessful!\n");
 
-    printf("SAVE TIME DATA\n");
+    fprintf(logfile, "SAVE TIME DATA\n");
     FILE *temperature_time_data = fopen("./output_data/temperature_time_data.txt", "w");
     if (temperature_time_data == NULL)
         return;
@@ -352,7 +370,7 @@ double getMaxAbs(Matrix3D *p)
         }
     }
 
-    printf("MAX PSI ITEM: %f\n", maxitem);
+    fprintf(logfile, "MAX PSI ITEM: %f\n", maxitem);
 
     return max;
 }
@@ -362,31 +380,32 @@ void inititalize_convective_flow_environment()
     t = init_vector(K);
     grid.x1 = init_vector(N);
     grid.x2 = init_vector(M);
-    alpha_x = init_vector(grid.x1->size);
-    alpha_y = init_vector(grid.x2->size);
-    beta_x = init_vector(grid.x1->size);
-    beta_y = init_vector(grid.x2->size);
+    alpha_x = init_vector(N);
+    alpha_y = init_vector(M);
+    beta_x = init_vector(N);
+    beta_y = init_vector(M);
 
-    u = init_matrix(grid.x1->size, grid.x2->size);
-    v = init_matrix(grid.x1->size, grid.x2->size);
+    u = init_matrix(N, M);
+    v = init_matrix(N, M);
 
-    psi = init_matrix3d(grid.x1->size, grid.x2->size, K);
-    psi12 = init_matrix3d(grid.x1->size, grid.x2->size, K);
-    omega = init_matrix3d(grid.x1->size, grid.x2->size, K);
-    omega12 = init_matrix3d(grid.x1->size, grid.x2->size, K);
-    temperature = init_matrix3d(grid.x1->size, grid.x2->size, K);
-    temperature12 = init_matrix3d(grid.x1->size, grid.x2->size, K);
+    psi = init_matrix3d(N, M, K);
+    psi12 = init_matrix3d(N, M, K);
+    omega = init_matrix3d(N, M, K);
+    omega12 = init_matrix3d(N, M, K);
+    temperature = init_matrix3d(N, M, K);
+    temperature12 = init_matrix3d(N, M, K);
 }
 
 int main(int argc, char *argv[])
 {
+    logfile = fopen("logfile", "a");
     double x_1 = 1.0;
     double y_1 = 1.0;
     double t_1 = 1.0;
 
     if (argc <= 1)
     {
-        printf("No arguments are given!\n\n");
+        fprintf(logfile, "No arguments are given!\n\n");
         helper(argv[0]);
         return 0;
     }
@@ -414,7 +433,7 @@ int main(int argc, char *argv[])
             N = atoi(optarg);
             if (N < 10)
             {
-                printf("Wrong number of X steps: %d\n", N);
+                fprintf(logfile, "Wrong number of X steps: %d\n", N);
                 exit(1);
             }
             break;
@@ -422,7 +441,7 @@ int main(int argc, char *argv[])
             M = atoi(optarg);
             if (M < 10)
             {
-                printf("Wrong number of Y steps: %d\n", M);
+                fprintf(logfile, "Wrong number of Y steps: %d\n", M);
                 exit(1);
             }
             break;
@@ -430,7 +449,7 @@ int main(int argc, char *argv[])
             K = atoi(optarg);
             if (K < 10)
             {
-                printf("Wrong number of time steps: %d\n", K);
+                fprintf(logfile, "Wrong number of time steps: %d\n", K);
                 exit(1);
             }
             break;
@@ -463,7 +482,7 @@ int main(int argc, char *argv[])
             exit(0);
             break;
         default:
-            printf("Try \"./convective_flow --help\" for more information.\n");
+            fprintf(stdout, "Try \"./convective_flow --help\" for more information.\n");
             exit(0);
         }
     }
@@ -477,6 +496,13 @@ int main(int argc, char *argv[])
 
     inititalize_convective_flow_environment();
 
+    if (alloc_error)
+    {
+        fprintf(logfile, "Failed to allocate memory\n");
+        convective_flow_data_free();
+        exit(1);
+    }
+
     tau = t_1 / (K - 1);
     grid.hx1 = x_1 / (grid.x1->size - 1);
     grid.hx2 = y_1 / (grid.x2->size - 1);
@@ -487,16 +513,6 @@ int main(int argc, char *argv[])
     cfparams.nu = 1.0 / cfparams.Re;
     cfparams.rigth_beta = cfparams.Gr / (cfparams.Re * cfparams.Re);
     cfparams.lambda = 0.5;
-
-    if (grid.x1 == NULL || grid.x2 == NULL || t == NULL ||
-        temperature == NULL || temperature12 == NULL ||
-        omega == NULL || omega12 == NULL || psi == NULL ||
-        u == NULL || v == NULL || alpha_x == NULL || beta_y == NULL)
-    {
-        printf("Failed to allocate memory\n");
-        convective_flow_data_free();
-        exit(1);
-    }
 
     for (int i = 0; i < grid.x1->size; i++)
         grid.x1->data[i] = i * hx;
@@ -519,16 +535,16 @@ int main(int argc, char *argv[])
         temperature12->data[0][j][grid.x1->size-1] = T1;
     }
 
-    printf("RUN CALCULATIONS\n");
+    fprintf(logfile, "RUN CALCULATIONS\n");
     calculations();
-    printf("\tSuccessful!\n");
+    fprintf(logfile, "\tSuccessful!\n");
 
     save_data();
 
-    printf("%f\n", getMaxAbs(psi));
-    printf("\tSuccessful!\n");
+    fprintf(logfile, "%f\n", getMaxAbs(psi));
+    fprintf(logfile, "\tSuccessful!\n");
     convective_flow_data_free();
-    printf("\tSuccessful!\n");
+    fprintf(logfile, "\tSuccessful!\n");
 
     return 0;
 }

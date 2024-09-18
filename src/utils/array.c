@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils/array.h"
+#include "utils/mctx.h"
 
 _vector
 init_zero_vector(int size)
 {
-    _vector data = malloc(sizeof(double) * size);
+    _vector data = cnvalloc(sizeof(double) * size);
     if (data == NULL)
         return NULL;
 
@@ -18,7 +19,7 @@ init_zero_vector(int size)
 _matrix
 init_zero_matrix(int x_size, int y_size)
 {
-    _matrix data = malloc(sizeof(_matrix) * y_size);
+    _matrix data = cnvalloc(sizeof(_matrix) * y_size);
     if (data == NULL)
         return NULL;
 
@@ -31,7 +32,7 @@ init_zero_matrix(int x_size, int y_size)
 _matrix3D
 init_zero_matrix3d(int x_size, int y_size, int z_size)
 {
-    _matrix3D data = malloc(sizeof(_matrix3D) * z_size);
+    _matrix3D data = cnvalloc(sizeof(_matrix3D) * z_size);
     if (data == NULL)
         return NULL;
     
@@ -44,7 +45,9 @@ init_zero_matrix3d(int x_size, int y_size, int z_size)
 Vector *
 init_vector(int size)
 {
-    Vector *vector = (Vector *) malloc(sizeof(Vector));
+    Vector *vector = cnvalloc(sizeof(Vector));
+    if (vector == NULL)
+        return NULL;
 
     vector->size = size;
     vector->data = init_zero_vector(size);
@@ -55,7 +58,9 @@ init_vector(int size)
 Matrix *
 init_matrix(int x_size, int y_size)
 {
-    Matrix *matrix = (Matrix *) malloc(sizeof(Matrix));
+    Matrix *matrix = cnvalloc(sizeof(Matrix));
+    if (matrix == NULL)
+        return NULL;
     
     matrix->y_size = y_size;
     matrix->x_size = x_size;
@@ -67,7 +72,9 @@ init_matrix(int x_size, int y_size)
 Matrix3D *
 init_matrix3d(int x_size, int y_size, int z_size)
 {
-    Matrix3D *matrix = (Matrix3D *) malloc(sizeof(Matrix3D));
+    Matrix3D *matrix = cnvalloc(sizeof(Matrix3D));
+    if (matrix == NULL)
+        return NULL;
 
     matrix->z_size = z_size;
     matrix->y_size = y_size;
@@ -157,10 +164,10 @@ print_matrix3d(Matrix3D matrix)
 TimeVector *
 init_time_vector(int time_size, int size)
 {
-    TimeVector *vector = (TimeVector *) malloc(sizeof(TimeVector));
+    TimeVector *vector = (TimeVector *) cnvalloc(sizeof(TimeVector));
 
     vector->time_size = time_size;
-    vector->vector = malloc(sizeof(_vector) * time_size);
+    vector->vector = cnvalloc(sizeof(_vector) * time_size);
     for (int t = 0; t < time_size; t++)
         vector->vector[t] = init_vector(size);
 
@@ -170,10 +177,10 @@ init_time_vector(int time_size, int size)
 TimeMatrix *
 init_time_matrix(int time_size, int x_size, int y_size)
 {
-    TimeMatrix *matrix = (TimeMatrix *) malloc(sizeof(TimeMatrix));
+    TimeMatrix *matrix = (TimeMatrix *) cnvalloc(sizeof(TimeMatrix));
 
     matrix->time_size = time_size;
-    matrix->matrix = malloc(sizeof(_matrix) * time_size);
+    matrix->matrix = cnvalloc(sizeof(_matrix) * time_size);
     for (int t = 0; t < time_size; t++)
         matrix->matrix[t] = init_matrix(x_size, y_size);
 
@@ -183,10 +190,10 @@ init_time_matrix(int time_size, int x_size, int y_size)
 TimeMatrix3D *
 init_time_matrix3d(int time_size, int x_size, int y_size, int z_size)
 {
-    TimeMatrix3D *matrix = (TimeMatrix3D *) malloc(sizeof(TimeMatrix3D));
+    TimeMatrix3D *matrix = (TimeMatrix3D *) cnvalloc(sizeof(TimeMatrix3D));
     
     matrix->time_size = time_size;
-    matrix->matrix = malloc(sizeof(_matrix3D) * time_size);
+    matrix->matrix = cnvalloc(sizeof(_matrix3D) * time_size);
     for (int t = 0; t < time_size; t++)
         matrix->matrix[t] = init_matrix3d(x_size, y_size, z_size);
 
