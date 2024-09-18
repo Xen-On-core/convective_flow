@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib
-from matplotlib.animation import FuncAnimation
 import time
 
 from PIL import Image
@@ -37,9 +36,9 @@ else:
 
 datadir = './output_data'
 
-temp = f"{datadir}/Temp.txt"
-Omg = f"{datadir}/Omg.txt"
-Psi = f"{datadir}/Psi.txt"
+temp = f"{datadir}/temperature.txt"
+Omg = f"{datadir}/omega.txt"
+Psi = f"{datadir}/psi.txt"
 temp_data = []
 Omg_data = []
 Psi_data = []
@@ -52,7 +51,7 @@ with open(temp, 'r') as temp_file, open(Omg, 'r') as Omg_file, open(Psi, 'r') as
     for line in Psi_file:
         Psi_data.append(list(map(float, line.rstrip().split(' '))))
 
-example_temp = f"{datadir}/temp_all.txt"
+example_temp = f"{datadir}/temperature_time_data.txt"
 example_data = []
 with open(example_temp, 'r') as example:
     for line in example:
@@ -75,13 +74,13 @@ for t in range(len(example_data)):
         example_array[t][i // M][i % N] = example_data[t][i]
 
 Z_example = example_array
-level = 10
+level = 5
 Z_temp_levels = np.linspace(np.min(Z_example), np.max(Z_example), level)
 
 # Plot the surface
 font = {'size'   : 10}
 matplotlib.rc('font', **font)
-fig, ax = plt.subplots(1, 3, subplot_kw={'projection': '3d'})
+fig, ax = plt.subplots(1, 3, figsize=(15, 15), subplot_kw={'projection': '3d'})
 
 for item in ax:
     item.set_xlabel("$x$")
@@ -91,18 +90,18 @@ ax[0].plot_surface(X, Y, Z_temp, cmap=cm.magma)
 ax[0].set(title="$T$")
 
 ax[1].plot_surface(X, Y, Z_psi, cmap=cm.magma)
-ax[1].set(title="$psi$")
+ax[1].set(title="$\psi$")
 
 ax[2].plot_surface(X, Y, Z_omg, cmap=cm.magma)
-ax[2].set(title="$omega$")
+ax[2].set(title="$\omega$")
 
 if realtime:
     plt.show()
 else:
-    plt.savefig(f'./images/{save_files_name}_plane.png')
+    plt.savefig(f'./images/{save_files_name}_plane.png', dpi=300)
 plt.close()
 
-fig, ax = plt.subplots(1, 3, figsize=(10,10))
+fig, ax = plt.subplots(1, 2, figsize=(10,10))
 
 for item in ax:
     item.set_xlabel("$x$")
@@ -115,16 +114,16 @@ ax[0].set(title="$T$")
 
 CS = ax[1].contour(X, Y, Z_psi, level)
 ax[1].clabel(CS, inline=True)
-ax[1].set(title="$psi$")
+ax[1].set(title="$\psi$")
 
-CS = ax[2].contour(X, Y, Z_omg, level)
-ax[2].clabel(CS, inline=True)
-ax[2].set(title="$omega$")
+# CS = ax[2].contour(X, Y, Z_omg, level)
+# ax[2].clabel(CS, inline=True)
+# ax[2].set(title="$\omega$")
 
 if realtime:
     plt.show()
 else:
-    plt.savefig(f'./images/{save_files_name}_contour.png')
+    plt.savefig(f'./images/{save_files_name}_contour.png', dpi=300)
 plt.close()
 
 fig = plt.figure(figsize=(8,8))
@@ -135,18 +134,6 @@ ax.set(title="$T, time = 0.0$")
 ax.view_init(elev=90, azim=-90, roll=0)
 
 frames_num = len(example_data)
-
-# def update(i):
-#     start_time = time.time()
-#     if i+1 % 100 == 0:
-#         print(f"=== IMAGE ITERATION {i+1} ===")
-#         print("--- %s seconds ---" % (time.time() - start_time))
-#     plt.gca().cla()
-#     ax.set(title=f"$T$, time = {i / frames_num}")
-#     ax.plot_surface(TX, TY, Z_example[i], cmap=cm.hot)
-
-# anim = FuncAnimation(fig, update, frames = frames_num, interval=10)
-# anim.save(f'./anim/{save_files_name}.gif')
 
 if realtime:
     # This code need for show real-time animation
@@ -166,7 +153,7 @@ else:
     image = []
     times = []
     start_time = time.time()
-    for t in range(0, frames_num):
+    for t in range(0, frames_num, 10):
         if (t+1) % 100 == 0:
             print("=== IMAGE ITERATION %d ===" % (t+1))
             print("--- %f seconds ---" % (time.time() - start_time))
